@@ -4,7 +4,8 @@
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>kcj</title>
+      <title>kcj</title>     
+      
     </head>
 
     <link
@@ -14,6 +15,61 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style></style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script> 
+    <style>
+    
+    </style>
+    <script>
+      function signup() {
+                  
+          var pw_give = $('#input-pw').val()
+          if (pw_give.length <= 4) {
+              alert('비밀번호는 5자리 이상이어야합니다.')
+              return
+          } 
+                  
+          $.ajax({
+              type: "POST",
+              url: "/signup",
+              data: {
+                  id_give: $('#input-id').val(),
+                  pw_give: pw_give,
+                  nickname_give: $('#input-nick').val()
+              },
+              success: function (response) {
+                  if (response['result'] == 'success') {
+                      alert('회원가입이 완료되었습니다.')                      
+                  } else {
+                      alert(response['msg'])
+                  }
+              }
+          })
+      }
+      function signin() {
+        $.ajax({
+            type: "POST",
+            url: "/login",
+            data: {
+                id_give: $('#signin-id').val(),
+                pw_give: $('#signin-pw').val(),
+            },
+            success: function (response) {
+                console.log(response)
+                if (response['result'] == 'success') {
+                    // 로그인에 성공하면 token을 쿠키에 저장
+                    $.cookie('mytoken', response['token']);
+                    alert('로그인 완료!')
+                    // window.location.href = '/'
+                } else {
+                    alert(response['msg'])
+                }
+            }
+        })
+    }
+    function is_valid_passwd(){
+
+    }
+    </script>
   </head>
   <body>
     <header>
@@ -27,6 +83,52 @@
       <div>
         <li>{{ card.context }}</li>
       </div>
+        <div class="posting-box" id="signup-box">
+          <div class="form-group">
+            <label>ID</label>
+            <input type = "text" 
+                  id="input-id" placeholder="">
+          </div>
+          <div class="form-group">
+            <label>PASSWORD</label>
+            <input type = "password" 
+                  id="input-pw" placeholder="" minlength = "5" required>
+          </div>
+          <div class="form-group">
+            <label>NICKNAME</label>
+            <input type="text" class="form-control" aria-describedby="emailHelp"
+                  id="input-nick" placeholder="">
+          </div>
+          <button type="submit" onclick="signup()" class="btn btn-primary">회원가입</button>
+        </div>
+
+        <div class="posting-box" id="signup-box">
+          <div class="form-group">
+            <label>ID</label>
+            <input type = "text" 
+                  id="signin-id" placeholder="">
+          </div>
+          <div class="form-group">
+            <label>PASSWORD</label>
+            <input type = "password" 
+                  id="signin-pw" placeholder="" minlength = "5" required>
+          </div>
+          <button type="submit" onclick="signin()" class="btn btn-primary">로그인</button>
+        </div>
+
+        <div>
+            <button>
+                질문 작성
+            </button>
+        </div>
+        <div>
+            <div>
+                질문 카드1
+            </div>
+            <div>
+                질문 카드2
+            </div>
+        </div>
     </section>
     <script></script>
   </body>
