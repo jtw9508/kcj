@@ -1,17 +1,35 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request, url_for, redirect
+from pymongo import MongoClient
+import random
 import hashlib
 import datetime
 import jwt
 
 app = Flask(__name__)
 
-from pymongo import MongoClient
-client = MongoClient('mongodb+srv://sparta:jungle@cluster0.xbjecej.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
-db = client.login
-SECRET_KEY = 'jungle'
+
+# LOAD .env FILE
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+CLIENT_ID = os.getenv("CLIENT_ID")
+
+client = MongoClient(CLIENT_ID)
+db = client.kcj
+
 @app.route('/')
-def home():
-   return render_template('index.html')
+def index():
+    cards = list(db.cards.find({}))
+    card = random.choice(cards)
+    return render_template('index.html', card=card)
+
+# CREATE CARD
+# @app.route('/add', methods=['POST'])
+# def add():
+#     card = request.form['card']
+#     return redirect(url_for('index'))
+
 
 @app.route('/signup', methods = ['POST'])
 def signup():

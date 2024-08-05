@@ -4,9 +4,7 @@
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>kcj</title>
-      <!-- jwt토큰 jquery쿠키 저장 -->
-      
+      <title>kcj</title>     
       
     </head>
 
@@ -16,6 +14,7 @@
     />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style></style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script> 
     <style>
     
@@ -74,12 +73,16 @@
   </head>
   <body>
     <header>
-        <div>이름</div>
-        <div>
-            로그인하기
-        </div>
+      <div>이름</div>
+      <div>로그인하기</div>
     </header>
     <section>
+      <div>
+        <button>질문 작성</button>
+      </div>
+      <div>
+        <li>{{ card.context }}</li>
+      </div>
         <div class="posting-box" id="signup-box">
           <div class="form-group">
             <label>ID</label>
@@ -127,8 +130,6 @@
             </div>
         </div>
     </section>
-    <script>
-      
-    </script>
+    <script></script>
   </body>
 </html>
