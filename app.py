@@ -1,3 +1,4 @@
+from flask import Flask, render_template, request, url_for, redirect, g, jsonify,Response
 from flask import Flask, render_template, request, url_for, redirect, g, jsonify, Response
 from pymongo import MongoClient
 from bson import ObjectId
@@ -5,6 +6,7 @@ import hashlib
 import datetime
 import jwt
 from functools  import wraps
+import random
 
 app = Flask(__name__)
 
@@ -22,9 +24,10 @@ db = client.kcj
 def login_required(f):      									
     @wraps(f)                   								
     def decorated_function(*args, **kwargs):					
-        access_token = request.headers.get('Authorization') 	
+        access_token = request.cookies.get('mytoken') 	
         if access_token is not None:  							
             try:
+                payload = jwt.decode(access_token, SECRET_KEY, 'HS256') 				   
                 payload = jwt.decode(access_token, SECRET_KEY, 'HS256') 				   
             except jwt.InvalidTokenError:
                 payload = None     							
@@ -32,9 +35,9 @@ def login_required(f):
             if payload is None: return Response(status=401)  	
 
             user_id   = payload['id']
-            user_nick = payload['NICK']  					
+            user_name = payload['username']  					
             g.user_id = user_id
-            g.user_nick = user_nick
+            g.user_name = user_name
         else:
             return Response(status = 401)  						
 
@@ -43,7 +46,23 @@ def login_required(f):
 
 # MAIN & READ CARD
 @app.route('/')
+# @is_logined
 def index():
+    access_token = request.cookies.get('mytoken')
+
+    if access_token:
+        is_login = True
+        try:
+            payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+            user_name = payload['username']
+        except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
+            is_login = False
+            user_name = '로그인해주세요'
+            # return render_template('index.html', is_login = is_login, user_name = user_name)
+        
+    else:
+        is_login = False
+        user_name = '로그인해주세요'
     # ObjectID string 으로 변환
     def convert_objectid_to_str(doc):
         if isinstance(doc, dict):
@@ -57,6 +76,16 @@ def index():
                 convert_objectid_to_str(item)
         return doc
     cards = list(db.cards.find({}))
+
+    return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
+
+@app.route('/loginpage', methods = ['GET'])
+def loginpage():
+    return render_template('signin.html')
+
+@app.route('/signuppage', methods = ['GET'])
+def signuppage():
+    return render_template('signup.html')
     return render_template('index.html', cards=cards)
 
 # CREATE CARD
@@ -154,7 +183,7 @@ def login():
         # JWT 토큰 생성
         payload = {
             'id': id_receive,
-            'nickname': result['NICK'], #작성자 기록
+            'username': result['NICK'], #작성자 기록
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=100)
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256') #.decode('utf-8')
@@ -166,10 +195,16 @@ def login():
         return jsonify({'result': 'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
     pass
 
+@app.route('/logout', methods = ['POST'])
+def logout():
+    return render_template('index.html')
+
 @app.route('/mypage', methods = ['POST'])
 @login_required
 def get_mypage():
-    pass  
+    my_post = db.card.find_all({'author':user_name}) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
+    my_reply = db.comment.find_all({'author':user_name}) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
+    return render_template('my_page.html')
 
 
 if __name__ == '__main__':

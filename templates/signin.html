@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>kcj login</title>     
+      
+    </head>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style></style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script> 
+    <style>
+    
+    </style>
+    <script>
+      function signin() {
+        $.ajax({
+            type: "POST",
+            url: "/login",
+            data: {
+                id_give: $('#signin-id').val(),
+                pw_give: $('#signin-pw').val(),
+            },
+            success: function (response) {
+                console.log(response)
+                if (response['result'] == 'success') {
+                    // 로그인에 성공하면 token을 쿠키에 저장
+                    $.cookie('mytoken', response['token']);
+                    alert('로그인 완료!')
+                    window.location.href = '/'
+                } else {
+                    alert(response['msg'])
+                }
+            }
+        })
+    }
+    function is_valid_passwd(){
+
+    }
+    </script>
+  </head>
+  <body>
+    <header>
+      <div>이름</div>
+      <div>로그인하기</div>
+    </header>
+        <div class="posting-box" id="signup-box">          
+          <div class="field">
+            <p class="control has-icons-left has-icons-right"></p>
+            <label class = "label">ID</label>
+            <input class = "input" type = "text" 
+                  id="signin-id" placeholder="">
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-envelope"></i>
+                  </span>
+                  <span class="icon is-small is-right">
+                    <i class="fas fa-check"></i>
+                  </span>
+            </p>
+          </div>
+          <div class="field">
+            <p class="control has-icons-left">
+            <label class = "label">PASSWORD</label>
+            <input class = "input" type = "password" 
+                  id="signin-pw" placeholder="" minlength = "5" required>
+            <span class="icon is-small is-left">
+              <i class="fas fa-lock"></i>
+            </span>
+          </p>
+          </div>
+          <div class="field">
+          <p class="control">
+          <button type="submit" onclick="signin()" class="button is-success">로그인</button>
+        </p>
+      </div>
+        </div>
+    </section>
+    <script></script>
+  </body>
+</html>
