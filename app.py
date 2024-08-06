@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, url_for, redirect, jsonify
+from flask import Flask, render_template, request, url_for, redirect, g, jsonify
 from pymongo import MongoClient
 from bson import ObjectId
 import hashlib
 import datetime
 import jwt
+from functools  import wraps
 
 app = Flask(__name__)
 
@@ -18,7 +19,28 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 client = MongoClient(CLIENT_ID)
 db = client.kcj
 
-# MAIN & READ CARD
+def login_required(f):      									
+    @wraps(f)                   								
+    def decorated_function(*args, **kwargs):					
+        access_token = request.headers.get('Authorization') 	
+        if access_token is not None:  							
+            try:
+                payload = jwt.decode(access_token, current_app.config['JWT_SECRET_KEY'], 'HS256') 				   
+            except jwt.InvalidTokenError:
+                payload = None     							
+
+            if payload is None: return Response(status=401)  	
+
+            user_id   = payload['id']
+            user_nick = payload['NICK']  					
+            g.user_id = user_id
+            g.user_nick = user_nick
+        else:
+            return Response(status = 401)  						
+
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/')
 def index():
     # ObjectID string 으로 변환
@@ -34,9 +56,8 @@ def index():
                 convert_objectid_to_str(item)
         return doc
     cards = list(db.cards.find({}))
-    cards = [convert_objectid_to_str(card) for card in cards]
-
-    return render_template('index.html', cards=cards)
+    card = random.choice(cards)
+    return render_template('index.html')#, card=card)
 
 # CREATE CARD
 @app.route('/add', methods=['POST'])
@@ -76,11 +97,11 @@ def signup():
     print(pw_hash)
 
     # 이미 존재하는 아이디면 패스!
-    result = db.user.find_one({'id': id_receive})
+    result = db.user.find_one({'ID': id_receive})
     if result is not None:
         return jsonify({'result': 'fail', 'msg': '이미 존재하는 ID입니다!'})
     else:
-        db.user.insert_one({'id': id_receive, 'pw': pw_hash, 'nick': nickname_receive})
+        db.user.insert_one({'ID': id_receive, 'PW': pw_hash, 'NICK': nickname_receive})
         return jsonify({'result': 'success'})
 
 @app.route('/login', methods = ['POST'])
@@ -94,13 +115,14 @@ def login():
     print()
     print(pw_hash)
     # id, 암호화된pw을 가지고 해당 유저를 찾습니다.
-    result = db.user.find_one({'id': id_receive, 'pw': pw_hash})
+    result = db.user.find_one({'ID': id_receive, 'PW': pw_hash})
 
     # 찾으면 JWT 토큰을 만들어 발급합니다.
     if result is not None:
         # JWT 토큰 생성
         payload = {
             'id': id_receive,
+            'nickname': result['NICK'], #작성자 기록
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=100)
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256') #.decode('utf-8')
@@ -112,21 +134,11 @@ def login():
         return jsonify({'result': 'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
     pass
 
-@app.route('/isAuth', methods=['GET'])
-def api_valid():
-    token_receive = request.cookies.get('mytoken')
-    try:
-        # token을 시크릿키로 디코딩합니다.
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-        # payload 안에 id가 들어있습니다. 이 id로 유저정보를 찾습니다.
-        userinfo = db.user.find_one({'id': payload['id']}, {'_id': 0})
-        return jsonify({'result': 'success', 'nickname': userinfo['nick']})
-    except jwt.ExpiredSignatureError:
-        # 위를 실행했는데 만료시간이 지났으면 에러가 납니다.
-        return jsonify({'result': 'fail', 'msg': '로그인 시간이 만료되었습니다.'})
-    except jwt.exceptions.DecodeError:
-        # 로그인 정보가 없으면 에러가 납니다!
-        return jsonify({'result': 'fail', 'msg': '로그인 정보가 존재하지 않습니다.'})
+@app.route('/mypage', methods = ['POST'])
+@login_required
+def get_mypage():
+    pass  
+
 
 if __name__ == '__main__':
    app.run('0.0.0.0',port=5000,debug=True)
