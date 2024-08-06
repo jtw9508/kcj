@@ -1,12 +1,11 @@
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect, jsonify
 from pymongo import MongoClient
-import random
+from bson import ObjectId
 import hashlib
 import datetime
 import jwt
 
 app = Flask(__name__)
-
 
 # LOAD .env FILE
 from dotenv import load_dotenv
@@ -14,21 +13,57 @@ load_dotenv()
 
 import os
 CLIENT_ID = os.getenv("CLIENT_ID")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 client = MongoClient(CLIENT_ID)
 db = client.kcj
 
+# MAIN & READ CARD
 @app.route('/')
 def index():
+    # ObjectID string 으로 변환
+    def convert_objectid_to_str(doc):
+        if isinstance(doc, dict):
+            for key, value in doc.items():
+                if isinstance(value, ObjectId):
+                    doc[key] = str(value)
+                elif isinstance(value, (dict, list)):
+                    convert_objectid_to_str(value)
+        elif isinstance(doc, list):
+            for item in doc:
+                convert_objectid_to_str(item)
+        return doc
     cards = list(db.cards.find({}))
-    card = random.choice(cards)
-    return render_template('index.html', card=card)
+    cards = [convert_objectid_to_str(card) for card in cards]
+
+    return render_template('index.html', cards=cards)
 
 # CREATE CARD
-# @app.route('/add', methods=['POST'])
-# def add():
-#     card = request.form['card']
-#     return redirect(url_for('index'))
+@app.route('/add', methods=['POST'])
+def add():
+    context = request.form['card-context']
+    token_receive = request.cookies.get('mytoken')
+    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+    username = payload['username']
+    card = {'author': username, 'context': context}
+    db.cards.insert_one(card)
+    return redirect(url_for('index'))
+
+# EDIT CARD
+@app.route('/edit/<string:id>', methods=['GET', 'POST'])
+def edit(id):
+    if request.method == 'POST':
+        context = request.form['modified-context']
+        db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
+        return redirect(url_for('index'))
+    card = db.cards.find_one({'_id': ObjectId(id)})
+    return render_template('edit.html', id=id, card=card)
+
+# DELETE CARD
+@app.route('/delete/<string:id>')
+def delete(id):
+    db.cards.delete_one({'_id': ObjectId(id)})
+    return redirect(url_for('index'))
 
 
 @app.route('/signup', methods = ['POST'])
