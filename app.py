@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, g, jsonify
+from flask import Flask, render_template, request, url_for, redirect, g, jsonify,Response
 from pymongo import MongoClient
 from bson import ObjectId
 import hashlib
@@ -22,19 +22,19 @@ db = client.kcj
 def login_required(f):      									
     @wraps(f)                   								
     def decorated_function(*args, **kwargs):					
-        access_token = request.headers.get('Authorization') 	
+        access_token = request.cookies.get('mytoken') 	
         if access_token is not None:  							
             try:
-                payload = jwt.decode(access_token, current_app.config['JWT_SECRET_KEY'], 'HS256') 				   
+                payload = jwt.decode(access_token, SECRET_KEY, 'HS256') 				   
             except jwt.InvalidTokenError:
                 payload = None     							
 
             if payload is None: return Response(status=401)  	
 
             user_id   = payload['id']
-            user_nick = payload['NICK']  					
+            user_name = payload['nickname']  					
             g.user_id = user_id
-            g.user_nick = user_nick
+            g.user_name = user_name
         else:
             return Response(status = 401)  						
 
@@ -42,7 +42,22 @@ def login_required(f):
     return decorated_function
 
 @app.route('/')
+# @is_logined
 def index():
+    access_token = request.cookies.get('mytoken')
+
+    if access_token:
+        is_login = True
+        try:
+            payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+        except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
+            is_login = False
+            user_name = '로그인해주세요'
+            # return render_template('index.html', is_login = is_login, user_name = user_name)
+        user_name = payload['nickname']
+    else:
+        is_login = False
+        user_name = '로그인해주세요'
     # ObjectID string 으로 변환
     def convert_objectid_to_str(doc):
         if isinstance(doc, dict):
@@ -57,7 +72,15 @@ def index():
         return doc
     cards = list(db.cards.find({}))
     card = random.choice(cards)
-    return render_template('index.html')#, card=card)
+    return render_template('index.html', is_login = is_login, user_name = user_name)
+
+@app.route('/loginpage', methods = ['GET'])
+def loginpage():
+    return render_template('signin.html')
+
+@app.route('/signuppage', methods = ['GET'])
+def signuppage():
+    return render_template('signup.html')
 
 # CREATE CARD
 @app.route('/add', methods=['POST'])
@@ -134,10 +157,16 @@ def login():
         return jsonify({'result': 'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
     pass
 
+@app.route('/logout', methods = ['POST'])
+def logout():
+    return render_template('index.html')
+
 @app.route('/mypage', methods = ['POST'])
 @login_required
 def get_mypage():
-    pass  
+    my_post = db.card.find_all({'author':user_name}) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
+    my_reply = db.comment.find_all({'author':user_name}) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
+    return render_template('my_page.html')
 
 
 if __name__ == '__main__':
