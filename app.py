@@ -6,7 +6,6 @@ import hashlib
 import datetime
 import jwt
 from functools  import wraps
-import random
 
 app = Flask(__name__)
 
