@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, url_for, redirect, g, jsonify,Response
 from pymongo import MongoClient
-import random
+from bson import ObjectId
 import hashlib
 import datetime
 import jwt
 from functools  import wraps
 
 app = Flask(__name__)
-
 
 # LOAD .env FILE
 from dotenv import load_dotenv
@@ -51,14 +50,28 @@ def index():
         is_login = True
         try:
             payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
             is_login = False
             user_name = '로그인해주세요'
-            return render_template('index.html', is_login = is_login, user_name = user_name)
+            # return render_template('index.html', is_login = is_login, user_name = user_name)
         user_name = payload['nickname']
     else:
         is_login = False
         user_name = '로그인해주세요'
+    # ObjectID string 으로 변환
+    def convert_objectid_to_str(doc):
+        if isinstance(doc, dict):
+            for key, value in doc.items():
+                if isinstance(value, ObjectId):
+                    doc[key] = str(value)
+                elif isinstance(value, (dict, list)):
+                    convert_objectid_to_str(value)
+        elif isinstance(doc, list):
+            for item in doc:
+                convert_objectid_to_str(item)
+        return doc
+    cards = list(db.cards.find({}))
+    card = random.choice(cards)
     return render_template('index.html', is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -70,10 +83,31 @@ def signuppage():
     return render_template('signup.html')
 
 # CREATE CARD
-# @app.route('/add', methods=['POST'])
-# def add():
-#     card = request.form['card']
-#     return redirect(url_for('index'))
+@app.route('/add', methods=['POST'])
+def add():
+    context = request.form['card-context']
+    token_receive = request.cookies.get('mytoken')
+    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+    username = payload['username']
+    card = {'author': username, 'context': context}
+    db.cards.insert_one(card)
+    return redirect(url_for('index'))
+
+# EDIT CARD
+@app.route('/edit/<string:id>', methods=['GET', 'POST'])
+def edit(id):
+    if request.method == 'POST':
+        context = request.form['modified-context']
+        db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
+        return redirect(url_for('index'))
+    card = db.cards.find_one({'_id': ObjectId(id)})
+    return render_template('edit.html', id=id, card=card)
+
+# DELETE CARD
+@app.route('/delete/<string:id>')
+def delete(id):
+    db.cards.delete_one({'_id': ObjectId(id)})
+    return redirect(url_for('index'))
 
 
 @app.route('/signup', methods = ['POST'])
