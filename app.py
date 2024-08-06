@@ -49,7 +49,7 @@ def convert_time(time):
     me_timeyear = math.floor(me_timeday / 365)
 
     if me_time < 1 :
-        now_fd.append('방금전')
+        a = '방금 전'
         
     elif me_time < 60 :
         a = str(me_time) + '분 전'
