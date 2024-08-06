@@ -1,16 +1,7 @@
 {% extends 'base.html' %} {% block content %}
-<h1>카드 작성 폼</h1>
-<form action="{{ url_for('add') }}" method="post">
-  <textarea
-    class="textarea"
-    placeholder="내용을 입력해주세요."
-    type="text"
-    name="card-context"
-    required
-  ></textarea>
-  <button class="button is-link" type="submit">추가</button>
-</form>
+
 <section class="hero is-success">
+  <a href="/add" class="button is-dark">질문하기</a>
   <div class="hero-body" id="signup-box">
     <div class="fixed-grid has-5-cols">
       <div class="grid">
@@ -29,10 +20,9 @@
                 <time datetime="2016-1-1">{{ card.time_convert }}</time>
               </div>
             </div>
-            <div id="comment-list"></div>
             <footer class="card-footer">
               <a
-                href="{{ url_for('add_comment', id=card._id) }}"
+                href="{{ url_for('detail', id=card._id) }}"
                 class="card-footer-item"
                 >답변 달기</a
               >
