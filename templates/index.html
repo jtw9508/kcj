@@ -20,6 +20,14 @@
     
     </style>
     <script>
+      function is_login() {
+          if (document.cookie['mytoken']) {
+            return true
+          }
+          else {
+            return false
+          }
+      }
       function signup() {
                   
           var pw_give = $('#input-pw').val()
@@ -59,29 +67,38 @@
                     // 로그인에 성공하면 token을 쿠키에 저장
                     $.cookie('mytoken', response['token']);
                     alert('로그인 완료!')
-                    // window.location.href = '/'
+                    window.location.href = '/'
                 } else {
                     alert(response['msg'])
                 }
             }
         })
     }
-    function is_valid_passwd(){
+    function logout(){
+      $.removeCookie('mytoken', {path:'/'});
+      window.location.href = '/'
 
     }
     </script>
   </head>
   <body>
     <header>
-      <div>이름</div>
-      <div>로그인하기</div>
+      <div>{{ user_name }}</div>
+      {% if is_login %}
+      <a href="/mypage" class="nav-link">마이페이지</a>
+      <button onclick = "logout()" class="nav-link">로그아웃</a>
+      {% else %}
+      <a href="/loginpage" class="nav-link">로그인하기</a>
+      <a href="/signuppage" class="nav-link">회원가입하기</a>
+      {% endif %}
+
     </header>
     <section>
       <div>
         <button>질문 작성</button>
       </div>
       <div>
-        <li>{{ card.context }}</li>
+
       </div>
         <div class="posting-box" id="signup-box">
           <div class="form-group">
