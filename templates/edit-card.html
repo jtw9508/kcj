@@ -1,0 +1,16 @@
+{% extends 'base.html' %} {% block content %}
+<h1>카드 수정 폼</h1>
+<form action="{{ url_for('edit', id=id) }}" method="post">
+  <textarea
+    class="textarea"
+    placeholder="내용을 입력해주세요."
+    type="text"
+    name="modified-context"
+    text="{{ card.context }}"
+    required
+  ></textarea>
+  <button class="button is-link" type="submit">수정</button>
+</form>
+{% endblock %} {% block scripts %}
+<script></script>
+{% endblock %}

@@ -75,7 +75,6 @@ def index():
                 convert_objectid_to_str(item)
         return doc
     cards = list(db.cards.find({}))
-
     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -88,16 +87,18 @@ def signuppage():
     return render_template('index.html', cards=cards)
 
 # CREATE CARD
-@app.route('/add', methods=['POST'])
+@app.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
-    context = request.form['card-context']
-    token_receive = request.cookies.get('mytoken')
-    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-    username = payload['username']
-    card = {'author': username, 'context': context}
-    db.cards.insert_one(card)
-    return redirect(url_for('index'))
+    if request.method == 'POST':
+        context = request.form['card-context']
+        token_receive = request.cookies.get('mytoken')
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        username = payload['username']
+        card = {'author': username, 'context': context}
+        db.cards.insert_one(card)
+        return redirect(url_for('index'))
+    return render_template('create-card.html')
 
 # EDIT CARD
 @app.route('/edit/<string:id>', methods=['GET', 'POST'])
@@ -108,7 +109,7 @@ def edit(id):
         db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
         return redirect(url_for('index'))
     card = db.cards.find_one({'_id': ObjectId(id)})
-    return render_template('edit.html', id=id, card=card)
+    return render_template('edit-card.html', id=id, card=card)
 
 # DELETE CARD
 @app.route('/delete/<string:id>')
@@ -116,22 +117,21 @@ def delete(id):
     db.cards.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
 
-# READ COMMENT
-@app.route('/comment/<string:id>', methods=['GET'])
-def get_comment(id):
+# DETAIL & READ COMMENT & CREATE COMMENT
+@app.route('/detail/<string:id>', methods=['GET', 'POST'])
+@login_required
+def detail(id):
+    if request.method == 'POST':
+        context = request.form['comment-context']
+        token_receive = request.cookies.get('mytoken')
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        username = payload['username']
+        comment = {'author': username, 'card_id': id, 'context': context}
+        db.comments.insert_one(comment)
+        return redirect(url_for('detail', id=id))
+    card = db.cards.find_one({'_id': ObjectId(id)})
     comments = list(db.comments.find({'card_id' : id}))
-    return jsonify(comments)
-
-# CREATE COMMENT
-@app.route('/comment/<string:id>', methods=['POST'])
-def add_comment(id):
-    context = request.form['comment-context']
-    token_receive = request.cookies.get('mytoken')
-    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-    username = payload['nickname']
-    comment = {'author': username, 'card_id': id, 'context': context}
-    db.cards.insert_one(comment)
-    return jsonify({"status": "success"})
+    return render_template('detail.html', id=id, card=card, comments=comments)
 
 # EDIT COMMENT
 @app.route('/memos/<int:id>', methods=['PUT'])
