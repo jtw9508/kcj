@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, g, jsonify
+from flask import Flask, render_template, request, url_for, redirect, g, jsonify, Response
 from pymongo import MongoClient
 from bson import ObjectId
 import hashlib
@@ -25,7 +25,7 @@ def login_required(f):
         access_token = request.headers.get('Authorization') 	
         if access_token is not None:  							
             try:
-                payload = jwt.decode(access_token, current_app.config['JWT_SECRET_KEY'], 'HS256') 				   
+                payload = jwt.decode(access_token, SECRET_KEY, 'HS256') 				   
             except jwt.InvalidTokenError:
                 payload = None     							
 
@@ -41,6 +41,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# MAIN & READ CARD
 @app.route('/')
 def index():
     # ObjectID string 으로 변환
@@ -56,22 +57,23 @@ def index():
                 convert_objectid_to_str(item)
         return doc
     cards = list(db.cards.find({}))
-    card = random.choice(cards)
-    return render_template('index.html')#, card=card)
+    return render_template('index.html', cards=cards)
 
 # CREATE CARD
 @app.route('/add', methods=['POST'])
+@login_required
 def add():
     context = request.form['card-context']
     token_receive = request.cookies.get('mytoken')
     payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-    username = payload['username']
+    username = payload['nickname']
     card = {'author': username, 'context': context}
     db.cards.insert_one(card)
     return redirect(url_for('index'))
 
 # EDIT CARD
 @app.route('/edit/<string:id>', methods=['GET', 'POST'])
+@login_required
 def edit(id):
     if request.method == 'POST':
         context = request.form['modified-context']
@@ -85,6 +87,36 @@ def edit(id):
 def delete(id):
     db.cards.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
+
+# READ COMMENT
+@app.route('/comment/<string:id>', methods=['GET'])
+def get_comment(id):
+    comments = list(db.comments.find({'card_id' : id}))
+    return jsonify(comments)
+
+# CREATE COMMENT
+@app.route('/comment/<string:id>', methods=['POST'])
+def add_comment(id):
+    context = request.form['comment-context']
+    token_receive = request.cookies.get('mytoken')
+    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+    username = payload['nickname']
+    comment = {'author': username, 'card_id': id, 'context': context}
+    db.cards.insert_one(comment)
+    return jsonify({"status": "success"})
+
+# EDIT COMMENT
+@app.route('/memos/<int:id>', methods=['PUT'])
+def edit_comment(id):
+    memos[id] = request.json['memo']
+    return jsonify({"status": "success"})
+
+# DELETE COMMENT
+@app.route('/comment/<int:id>', methods=['DELETE'])
+def delete_comment(id):
+    memos.pop(id)
+    return jsonify({"status": "success"})
+
 
 
 @app.route('/signup', methods = ['POST'])

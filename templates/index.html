@@ -124,20 +124,65 @@
       <div>
         <h1>카드 작성 폼</h1>
         <form action="{{ url_for('add') }}" method="post">
-          <input type="text" name="card-context" required />
-          <button type="submit">추가</button>
+          <textarea
+            class="textarea"
+            placeholder="내용을 입력해주세요."
+            type="text"
+            name="card-context"
+            required
+          ></textarea>
+          <button class="button is-link" type="submit">추가</button>
         </form>
         <ul>
           {% for card in cards %}
-          <li>
-            {{ card }}
-            <a href="{{ url_for('edit', id=card._id) }}">수정</a>
-            <a href="{{ url_for('delete', id=card._id) }}">삭제</a>
-          </li>
+          <div class="card" id="{{ card._id }}">
+            <header class="card-header">
+              <p class="card-author-name">{{ card.author }}</p>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                {{ card.context }}
+                <a href="#">@keyword</a>
+                <br />
+                <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
+              </div>
+            </div>
+            <div id="comment-list"></div>
+            <footer class="card-footer">
+              <a
+                href="{{ url_for('add_comment', id=card._id) }}"
+                class="card-footer-item"
+                >답변 달기</a
+              >
+              <a
+                href="{{ url_for('edit', id=card._id) }}"
+                class="card-footer-item"
+                >수정</a
+              >
+              <a
+                href="{{ url_for('delete', id=card._id) }}"
+                class="card-footer-item"
+                >삭제</a
+              >
+            </footer>
+          </div>
           {% endfor %}
         </ul>
       </div>
     </section>
-    <script></script>
+    <script>
+      $(document).ready(function () {
+        $(".card").each(function () {
+          const cardId = $(this).attr("id");
+          const commentList = $(this).find("#comment-list");
+
+          $.get("/comments/" + cardId, function (comments) {
+            comments.forEach((comment) => {
+              commentList.append("<p>" + comment + "</p>");
+            });
+          });
+        });
+      });
+    </script>
   </body>
 </html>
