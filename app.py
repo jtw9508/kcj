@@ -94,7 +94,7 @@ def add():
     context = request.form['card-context']
     token_receive = request.cookies.get('mytoken')
     payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-    username = payload['nickname']
+    username = payload['username']
     card = {'author': username, 'context': context}
     db.cards.insert_one(card)
     return redirect(url_for('index'))
