@@ -5,6 +5,7 @@ import hashlib
 import datetime
 import jwt
 from functools  import wraps
+import random
 
 app = Flask(__name__)
 
@@ -32,7 +33,7 @@ def login_required(f):
             if payload is None: return Response(status=401)  	
 
             user_id   = payload['id']
-            user_name = payload['nickname']  					
+            user_name = payload['username']  					
             g.user_id = user_id
             g.user_name = user_name
         else:
@@ -50,11 +51,12 @@ def index():
         is_login = True
         try:
             payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+            user_name = payload['username']
         except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
             is_login = False
             user_name = '로그인해주세요'
             # return render_template('index.html', is_login = is_login, user_name = user_name)
-        user_name = payload['nickname']
+        
     else:
         is_login = False
         user_name = '로그인해주세요'
@@ -71,8 +73,8 @@ def index():
                 convert_objectid_to_str(item)
         return doc
     cards = list(db.cards.find({}))
-    card = random.choice(cards)
-    return render_template('index.html', is_login = is_login, user_name = user_name)
+
+    return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
 def loginpage():
@@ -145,7 +147,7 @@ def login():
         # JWT 토큰 생성
         payload = {
             'id': id_receive,
-            'nickname': result['NICK'], #작성자 기록
+            'username': result['NICK'], #작성자 기록
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=100)
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256') #.decode('utf-8')
