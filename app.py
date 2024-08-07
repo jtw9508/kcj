@@ -191,6 +191,7 @@ def detail(id):
     
     card = db.cards.find_one({'_id': ObjectId(id)})
     card['time_convert'] = convert_time(card['time'])
+    print(card)
     comments = list(db.comments.find({'card_id' : id}))
     new_comments = []
     for comment in comments:
