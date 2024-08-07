@@ -111,8 +111,6 @@ def index():
     access_token = request.cookies.get('mytoken')
     # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
     is_login, user_name, payload = is_logined(access_token)
-    print(user_name, is_login)
-
     cards = list(db.cards.find({"active":"true"}))    
     new_cards = []
     for card in cards:
@@ -127,7 +125,9 @@ def index():
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-    print(user_name)
+    if is_login == True:
+        user_id = payload['id']
+        return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name, user_id = user_id )
     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -190,6 +190,7 @@ def detail(id):
         comment = {'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
         db.comments.insert_one(comment)
         return redirect(url_for('detail', id=id))
+    
     card = db.cards.find_one({'_id': ObjectId(id)})
     card['time_convert'] = convert_time(card['time'])
     comments = list(db.comments.find({'card_id' : id}))
@@ -204,9 +205,9 @@ def detail(id):
             comment['canrevise'] = 'no'
 
         comment['time_convert'] = convert_time(comment['time'])
-        new_comments.append(card)
+        new_comments.append(comment)
     comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
-
+    print(comments)
     return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name)
 
 # READ COMMENT
@@ -296,7 +297,7 @@ def logout():
     return render_template('index.html')
 
 ## MYPAGE API(내 포스트와 댓글들을 가져와서 화면에 보여주기)
-@app.route('/mypage<string:user_id>', methods = ['GET'])
+@app.route('/mypage/<string:user_id>', methods = ['GET'])
 @login_required
 def get_mypage(user_id):
     access_token = request.cookies.get('mytoken')
@@ -305,22 +306,11 @@ def get_mypage(user_id):
     if user_id != id:
         return PermissionError
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
-    print(cards)
-    # for card in cards:
     new_cards = []
     for card in cards:
-        # try:
-        #     if card['author'] == payload['username']:
-        #         card['canrevise'] = 'ok'
-        #     else:
-        #         card['canrevise'] = 'no'
-        # except:
-        #     card['canrevise'] = 'no'
-
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-
     comments = list(db.comments.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
     return render_template('mypage.html', cards=cards, comments=comments, is_login=is_login, user_name=user_name)
 
