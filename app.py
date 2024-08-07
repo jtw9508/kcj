@@ -157,12 +157,15 @@ def add():
 @app.route('/edit/<string:id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
+    ##로그인되어 있는지 확인
+    access_token = request.cookies.get('mytoken')
+    is_login, user_name, payload = is_logined(access_token)
     if request.method == 'POST':
         context = request.form['modified-context']
         db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
         return redirect(url_for('index'))
     card = db.cards.find_one({'_id': ObjectId(id)})
-    return render_template('edit-card.html', id=id, card=card)
+    return render_template('edit-card.html', id=id, card=card, is_login=is_login, user_name=user_name)
 
 # DELETE CARD WITH COMMENT
 @app.route('/delete/<string:id>')
@@ -175,6 +178,10 @@ def delete(id):
 @app.route('/detail/<string:id>', methods=['GET', 'POST'])
 @login_required
 def detail(id):
+    ##로그인되어 있는지 확인
+    access_token = request.cookies.get('mytoken')
+    is_login, user_name, payload = is_logined(access_token)
+
     if request.method == 'POST':
         context = request.form['comment-context']
         token_receive = request.cookies.get('mytoken')
@@ -199,7 +206,7 @@ def detail(id):
         new_comments.append(card)
     comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
 
-    return render_template('detail.html', id=id, card=card, comments=comments)
+    return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name)
 
 # READ COMMENT
 @app.route('/comment/<string:id>', methods=['GET'])
