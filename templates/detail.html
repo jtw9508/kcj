@@ -13,6 +13,7 @@
   </div>
 </div>
 
+{% if card.active == 'true' %}
 <article class="media">
   <div class="media-content">
     <div class="field">
@@ -23,9 +24,10 @@
         </form>
         
       </p>
-    </div>
-    
+    </div>    
   </div>
+  {% else %}
+  {% endif %}
 </article>
 {% for comment in comments %}
 {% if comment.canrevise =='ok' %}

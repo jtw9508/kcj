@@ -109,14 +109,11 @@ def is_logined(access_token):
 @app.route('/')
 def index():
     access_token = request.cookies.get('mytoken')
-    print(type(access_token))
     # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
-    
     is_login, user_name, payload = is_logined(access_token)
-    print(payload)
     print(user_name, is_login)
 
-    cards = list(db.cards.find({}))
+    cards = list(db.cards.find({"active":"true"}))    
     new_cards = []
     for card in cards:
         try:
@@ -151,7 +148,7 @@ def add():
         token_receive = request.cookies.get('mytoken')
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         username = payload['username']
-        card = {'author': username, 'context': context, 'time': datetime.datetime.utcnow()}
+        card = {'author': username, 'context': context, 'time': datetime.datetime.utcnow(), 'active':'true'}
         db.cards.insert_one(card)
         return redirect(url_for('index'))
     return render_template('create-card.html')
@@ -291,16 +288,16 @@ def logout():
     return render_template('index.html')
 
 ## MYPAGE API(내 포스트와 댓글들을 가져와서 화면에 보여주기)
-@app.route('/mypage/<id>', methods = ['GET'])
+@app.route('/mypage<string:user_id>', methods = ['GET'])
 @login_required
-def get_mypage(id):
+def get_mypage(user_id):
     access_token = request.cookies.get('mytoken')
     is_login, user_name, payload = is_logined(access_token)
     user_name = payload['username']
-    print(payload)
     print(user_name)
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
     print(cards)
+    # for card in cards:
     new_cards = []
     for card in cards:
         # try:
@@ -315,10 +312,20 @@ def get_mypage(id):
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
 
-    # for card in cards:
-
     comments = list(db.comments.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
     return render_template('mypage.html', cards = cards, comments = comments, is_login = is_login, user_name = user_name)
+
+
+# 질문 완료 페이지 불러오기
+@app.route('/records', methods = ['GET'])
+def record_page():
+    cards = list(db.cards.find({"active":"false"}))
+    return render_template('past-card.html', card = cards)
+# 질문 완료 텍스트 추가
+@app.route('/questionexpired/<string:id>')
+def questionexpired(id):
+    db.cards.update_one({'_id': ObjectId(id)}, {"$set":{"active":"false"}})
+    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
