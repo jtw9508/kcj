@@ -199,7 +199,8 @@ def detail(id):
         token_receive = request.cookies.get('mytoken')
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         username = payload['username']
-        comment = {'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
+        user_id = payload['id']
+        comment = {'author_id': user_id ,'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
         db.comments.insert_one(comment)
         return redirect(url_for('detail', id=id))
     
@@ -222,23 +223,6 @@ def detail(id):
     author_id = card['author_id']
     return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name, author_id=author_id)
 
-# READ COMMENT
-@app.route('/comment/<string:id>', methods=['GET'])
-def get_comment(id):
-    comments = list(db.comments.find({'card_id' : id}))
-    return jsonify(comments)
-
-# CREATE COMMENT
-@app.route('/comment/<string:id>', methods=['POST'])
-def add_comment(id):
-    context = request.form['comment-context']
-    token_receive = request.cookies.get('mytoken')
-    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-    username = payload['username']
-    user_id = payload['id']
-    comment = {'author_id': user_id ,'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
-    db.cards.insert_one(comment)
-    return jsonify({"status": "success"})
 
 # EDIT COMMENT
 @app.route('/comment/edit/<string:card_id>/<string:id>', methods=['GET', 'POST'])
