@@ -160,7 +160,8 @@ def add():
         token_receive = request.cookies.get('mytoken')
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         username = payload['username']
-        card = {'author': username, 'context': context, 'time': datetime.datetime.utcnow(), 'active':'true'}
+        user_id = payload['id']
+        card = {'author_id': user_id, 'author': username, 'context': context, 'time': datetime.datetime.utcnow(), 'active':'true'}
         db.cards.insert_one(card)
         return redirect(url_for('index'))
     return render_template('create-card.html')
@@ -218,7 +219,8 @@ def detail(id):
         comment['time_convert'] = convert_time(comment['time'])
         new_comments.append(comment)
     comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
-    return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name)
+    author_id = card['author_id']
+    return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name, author_id=author_id)
 
 # READ COMMENT
 @app.route('/comment/<string:id>', methods=['GET'])
