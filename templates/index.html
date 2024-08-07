@@ -35,7 +35,12 @@
                 href="{{ url_for('delete', id=card._id) }}"
                 class="card-footer-item"
                 >삭제</a
-              >
+              >              
+              <a
+                href="{{ url_for('questionexpired', id=card._id) }}"
+                class="card-footer-item"
+                >질문 완료</a
+              > 
             </footer>
           </div>
         </div>
