@@ -115,6 +115,7 @@ def edit(id):
 @app.route('/delete/<string:id>')
 def delete(id):
     db.cards.delete_one({'_id': ObjectId(id)})
+    db.comments.delete_many({'card_id': id})
     return redirect(url_for('index'))
 
 # DETAIL & READ COMMENT & CREATE COMMENT
