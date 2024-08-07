@@ -7,6 +7,7 @@ import jwt
 from functools  import wraps
 import math
 import time
+
 app = Flask(__name__)
 
 # LOAD .env FILE
@@ -106,34 +107,10 @@ def is_logined(access_token):
 @app.route('/')
 def index():
     access_token = request.cookies.get('mytoken')
-    # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
-    # if access_token:
-    #     is_login = True
-    #     try:
-    #         payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
-    #         user_name = payload['username']
-    #     except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
-    #         is_login = False
-    #         user_name = '로그인해주세요'
-    #         # return render_template('index.html', is_login = is_login, user_name = user_name)
-        
-    # else:
-    #     is_login = False
-    #     user_name = '로그인해주세요'
+    payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
     is_login, user_name, payload = is_logined(access_token)
     print(user_name, is_login)
-    # ObjectID string 으로 변환
-    def convert_objectid_to_str(doc):
-        if isinstance(doc, dict):
-            for key, value in doc.items():
-                if isinstance(value, ObjectId):
-                    doc[key] = str(value)
-                elif isinstance(value, (dict, list)):
-                    convert_objectid_to_str(value)
-        elif isinstance(doc, list):
-            for item in doc:
-                convert_objectid_to_str(item)
-        return doc
+
     cards = list(db.cards.find({}))
     new_cards = []
     for card in cards:
@@ -185,10 +162,11 @@ def edit(id):
     card = db.cards.find_one({'_id': ObjectId(id)})
     return render_template('edit-card.html', id=id, card=card)
 
-# DELETE CARD
+# DELETE CARD WITH COMMENT
 @app.route('/delete/<string:id>')
 def delete(id):
     db.cards.delete_one({'_id': ObjectId(id)})
+    db.comments.delete_many({'card_id': id})
     return redirect(url_for('index'))
 
 # DETAIL & READ COMMENT & CREATE COMMENT
@@ -220,6 +198,7 @@ def detail(id):
     comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
 
     return render_template('detail.html', id=id, card=card, comments=comments)
+
 # READ COMMENT
 @app.route('/comment/<string:id>', methods=['GET'])
 def get_comment(id):
@@ -238,16 +217,21 @@ def add_comment(id):
     return jsonify({"status": "success"})
 
 # EDIT COMMENT
-@app.route('/memos/<int:id>', methods=['PUT'])
-def edit_comment(id):
-    memos[id] = request.json['memo']
-    return jsonify({"status": "success"})
+@app.route('/comment/edit/<string:card_id>/<string:id>', methods=['GET', 'POST'])
+@login_required
+def edit_comment(card_id, id):
+    if request.method == 'POST':
+        context = request.form['modified-comment']
+        db.comments.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
+        return redirect(url_for('detail', id=card_id))
+    comment = db.comments.find_one({'_id': ObjectId(id)})
+    return render_template('edit-comment.html', card_id=card_id, id=id, comment=comment)
 
 # DELETE COMMENT
-@app.route('/comment/<int:id>', methods=['DELETE'])
-def delete_comment(id):
-    memos.pop(id)
-    return jsonify({"status": "success"})
+@app.route('/comment/delete/<string:card_id>/<string:id>', methods=['GET'])
+def delete_comment(card_id ,id):
+    db.comments.delete_one({'_id': ObjectId(id)})
+    return redirect(url_for('detail', id=card_id))
 
 
 # SIGNUP API
@@ -307,8 +291,6 @@ def logout():
 def get_mypage(id):
     access_token = request.cookies.get('mytoken')
     is_login, user_name, payload = is_logined(access_token)
-    # token_receive = request.cookies.get('mytoken')
-    # payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
     user_name = payload['username']
     print(user_name)
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
