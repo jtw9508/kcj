@@ -30,11 +30,12 @@
   {% endif %}
 </article>
 {% for comment in comments %}
+{% if comment.canrevise =='ok' %}
 <article class="media">
   <div class="media-content">
     <div class="content">
       <p>
-        <strong>{{ comment.author }}</strong> <small>31m</small>
+        <strong>{{ comment.author }}</strong> <small>{{comment.time_convert}}</small>
         <br />
         {{ comment.context }}
       </p>
@@ -58,8 +59,36 @@
     <a href="{{ url_for('delete_comment', card_id=id, id=comment._id) }}" class="button is-danger">삭제</a>
   </div>
 </article>
-{% endfor %} {% endblock %} {% block scripts %}
-<script>
+<<<<<<< HEAD
+{{else}}
+<article class="media">
+  <div class="media-content">
+    <div class="content">
+      <p>
+        <strong>{{ comment.author }}</strong> <small>11{{comment.time_convert}}</small>
+        <br />
+        {{ comment.context }}
+      </p>
+    </div>
+    <nav class="level is-mobile">
+      <div class="level-left">
+        <a class="level-item">
+          <span class="icon is-small"><i class="fas fa-reply"></i></span>
+        </a>
+        <a class="level-item">
+          <span class="icon is-small"><i class="fas fa-retweet"></i></span>
+        </a>
+        <a class="level-item">
+          <span class="icon is-small"><i class="fas fa-heart"></i></span>
+        </a>
+      </div>
+    </nav>
+  </div>
+  <div class="media-right">
+    <button class="delete"></button>
+  </div>
+</article>
+{% endif %} {% endfor %}  {% endblock %} {% block scripts %}
+<script></script>
 
-</script>
 {% endblock %}
