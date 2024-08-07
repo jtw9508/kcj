@@ -1,29 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="hero is-success">
   <a href="/" class="button is-black">진행중인 질문 보기</a>
   <div class="hero-body" id="signup-box">
     <div class="fixed-grid has-5-cols">
       <div class="grid">
-        {% for card in card %}        
+        {% for card in cards %}        
         <div class="cell">
-          <div class="card" id="{{ card._id }}">
-            <header class="card-header">
-              <p class="card-author-name">{{ card.author }}</p>
-            </header>
+          <div class="card has-background-grey-light" id="{{ card._id }}">
+            <header class="card-header pt-1 pb-1">
+          <strong class="pl-2">
+            <p class="card-author-name">{{ card.author }}</p>
+          </strong>
+          <time class="pl-3" datetime="2016-1-1">{{ card.time_convert }}</time>
+        </header>
             <div class="card-content">
-              <div class="content">
-                {{ card.context }}
-                <a href="#">@keyword</a>
-                <br />
-                <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
-              </div>
-            </div>
+          <div class="content">
+            {{ card.context }}
+            <br />
+          </div>
+        </div>
             <footer class="card-footer">
               <a
                 href="{{ url_for('detail', id=card._id) }}"
                 class="card-footer-item"
-                >답변 보기</a
+                >자세히 보기</a
               >
             </footer>
           </div>
@@ -33,78 +33,9 @@
       </div>
     </div>
   </div>
-</section>
 {% endblock %}
 {% block scripts %}
   <script>
-    $(document).ready(function () {
-      $(".card").each(function () {
-        const cardId = $(this).attr("id");
-        const commentList = $(this).find("#comment-list");
-  
-        $.get("/comments/" + cardId, function (comments) {
-          comments.forEach((comment) => {
-            commentList.append("<p>" + comment + "</p>");
-          });
-        });
-      });
-    });
-  
-    function is_login() {
-      if (document.cookie["mytoken"]) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-    function signup() {
-      var pw_give = $("#input-pw").val();
-      if (pw_give.length <= 4) {
-        alert("비밀번호는 5자리 이상이어야합니다.");
-        return;
-      }
-  
-      $.ajax({
-        type: "POST",
-        url: "/signup",
-        data: {
-          id_give: $("#input-id").val(),
-          pw_give: pw_give,
-          nickname_give: $("#input-nick").val(),
-        },
-        success: function (response) {
-          if (response["result"] == "success") {
-            alert("회원가입이 완료되었습니다.");
-          } else {
-            alert(response["msg"]);
-          }
-        },
-      });
-    }
-    function signin() {
-      $.ajax({
-        type: "POST",
-        url: "/login",
-        data: {
-          id_give: $("#signin-id").val(),
-          pw_give: $("#signin-pw").val(),
-        },
-        success: function (response) {
-          console.log(response);
-          if (response["result"] == "success") {
-            // 로그인에 성공하면 token을 쿠키에 저장
-            $.cookie("mytoken", response["token"]);
-            alert("로그인 완료!");
-            window.location.href = "/";
-          } else {
-            alert(response["msg"]);
-          }
-        },
-      });
-    }
-    function logout() {
-      $.removeCookie("mytoken", { path: "/" });
-      window.location.href = "/";
-    }
+    
   </script>
   {% endblock %}

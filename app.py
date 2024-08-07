@@ -158,7 +158,7 @@ def edit(id):
     if request.method == 'POST':
         context = request.form['modified-context']
         db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
-        return redirect(url_for('index'))
+        return redirect(url_for('detail', id=id))
     card = db.cards.find_one({'_id': ObjectId(id)})
     return render_template('edit-card.html', id=id, card=card)
 
@@ -182,6 +182,7 @@ def detail(id):
         db.comments.insert_one(comment)
         return redirect(url_for('detail', id=id))
     card = db.cards.find_one({'_id': ObjectId(id)})
+    card['time_convert'] = convert_time(card['time'])
     comments = list(db.comments.find({'card_id' : id}))
     return render_template('detail.html', id=id, card=card, comments=comments)
 
@@ -283,17 +284,22 @@ def mypage(user_id):
     is_login, user_name = is_logined(access_token)
     token_receive = request.cookies.get('mytoken')
     payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-    user_name = payload['username']
+    id = payload['id']
+    if user_id != id:
+        return PermissionError
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
     comments = list(db.comments.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
-    return render_template('mypage.html', cards = cards, comments = comments, is_login = is_login, user_name = user_name)
+    return render_template('mypage.html', cards=cards, comments=comments, is_login=is_login, user_name=user_name)
 
 
 # 질문 완료 페이지 불러오기
 @app.route('/records', methods = ['GET'])
 def record_page():
     cards = list(db.cards.find({"active":"false"}))
-    return render_template('past-card.html', card = cards)
+    for card in cards:
+        card['time_convert'] = convert_time(card['time'])
+    return render_template('past-card.html', cards = cards)
+
 # 질문 완료 텍스트 추가
 @app.route('/questionexpired/<string:id>')
 def questionexpired(id):

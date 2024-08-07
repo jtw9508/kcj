@@ -23,19 +23,12 @@
     flex: 1;
     overflow-y: auto;
   }
-  .card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  .card-content {
-    flex-grow: 1;
-  }
+  
 </style>
   </head>
   <body>
-    <section id="main-section" class="hero is-info">
-      <div class="hero-head">
+    <section id="main-section" class="hero is-info ">
+      <div class="hero-head has-background-white-bis">
         <header>
           <nav class="navbar">
             <div class="container">
@@ -62,7 +55,7 @@
           </nav>      
         </header>
       </div>
-    <div class="hero-body flex-wrap">
+    <div class="hero-body">
       {% block content %} {% endblock %}
     </div>
     <div class="hero-foot">
