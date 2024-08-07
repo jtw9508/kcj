@@ -1,12 +1,15 @@
 {% extends 'base.html' %} {% block content %}
-<h1>카드 수정 폼</h1>
-<h2>기존 내용 : {{ card.context }}</h2>
-<form action="{{ url_for('edit', id=id) }}" method="post">
+<h1>댓글 수정 폼</h1>
+<h2>기존 내용 : {{ comment.context }}</h2>
+<form
+  action="{{ url_for('edit_comment', card_id=card_id, id=id) }}"
+  method="post"
+>
   <textarea
     class="textarea"
     placeholder="내용을 입력해주세요."
     type="text"
-    name="modified-context"
+    name="modified-comment"
     required
   ></textarea>
   <button class="button is-link" type="submit">수정</button>
