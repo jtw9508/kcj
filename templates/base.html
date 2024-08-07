@@ -11,6 +11,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
     <style>
   html, body {
     height: 100%;
@@ -23,19 +24,12 @@
     flex: 1;
     overflow-y: auto;
   }
-  .card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  .card-content {
-    flex-grow: 1;
-  }
+  
 </style>
   </head>
   <body>
-    <section id="main-section" class="hero is-info">
-      <div class="hero-head">
+    <section id="main-section" class="hero is-info ">
+      <div class="hero-head has-background-white-bis">
         <header>
           <nav class="navbar">
             <div class="container">
@@ -48,21 +42,23 @@
               <div class="navbar-item">
                 <div class="buttons">
                   
+                  <div class="login-elements">
+                    <a href="/add" class="button is-dark">질문하기</a>
+                    <a href="{{ url_for('get_mypage', user_id = user_name) }}" class="nav-link">마이페이지</a>
+                    <button onclick = "logout()" class="nav-link">로그아웃</a>
+                  </div>
+                  <div class="logout-elements">
+                    <a href="/loginpage" class="button is-dark">로그인하기</a>
+                    <a href="/signuppage" class="button is-link">회원가입하기</a>
+                  </div>
 
-                    <a href="/add" class="button is-dark login-elements">질문하기</a>
-                    <a href="{{ url_for('get_mypage', user_id = user_name) }}" class="nav-link login-elements">마이페이지</a>
-                    <button onclick = "logout()" class="nav-link login-elements">로그아웃</a>
-                  
-                    <a href="/loginpage" class="button is-dark logout-elements">로그인하기</a>
-                    <a href="/signuppage" class="button is-link logout-elements">회원가입하기</a>
-                 
                 </div>
               </div>
             </div>
           </nav>      
         </header>
       </div>
-    <div class="hero-body flex-wrap">
+    <div class="hero-body">
       {% block content %} {% endblock %}
     </div>
     <div class="hero-foot">
@@ -84,34 +80,30 @@
       </div>
     </section>
 
-
+    <script>
+      $(document).ready( function() {
+        console.log(is_login())
+        if (is_login()) {
+          $('.login-elements').show();
+          $('.logout-elements').hide();
+        } else {
+          $('.login-elements').hide();
+          $('.logout-elements').show();
+        }
+      });
+      
+      function logout() {
+        $.removeCookie("mytoken", { path: "/" });
+        window.location.href = "/";
+      }
+      
+      function is_login() {
+        return $.cookie("mytoken") !== undefined;
+      }
+      </script>
 {% block scripts %} 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const loginElements = document.querySelectorAll('.login-elements');
-  const logoutElements = document.querySelectorAll('.logout-elements');
-  console.log('Login Elements:', loginElements); 
-  console.log('Logout Elements:', logoutElements);
-  const loggedIn = is_login();
-  console.log('Is Logged In:', loggedIn);
-  if (is_login()) {
-    loginElements.forEach(element => element.style.display = 'block');
-    logoutElements.forEach(element => element.style.display = 'none');
-  } else {
-    loginElements.forEach(element => element.style.display = 'none');
-    logoutElements.forEach(element => element.style.display = 'block');
-  }
-});
 
-function logout() {
-  $.removeCookie("mytoken", { path: "/" });
-  window.location.href = "/";
-}
-
-function is_login() {
-  return $.cookie("mytoken") !== undefined;
-}
-</script>{% endblock %}
+{% endblock %}
     
   </body>
 </html>

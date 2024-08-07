@@ -1,94 +1,88 @@
 {% extends 'base.html' %} {% block content %}
-<div class="card" id="{{ card._id }}">
-  <header class="card-header">
-    <strong class="card-author-name">{{ card.author }}</strong>
-  </header>
-  <div class="card-content">
-    <div class="content">
-      {{ card.context }}
-      <a href="#">@keyword</a>
-      <br />
-      <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
-    </div>
-  </div>
+<div class="mb-3">
+  <a href="{{ url_for('edit', id=card._id) }}" class="button is-warning"
+            >질문 수정</a
+          >
+          <a
+            href="{{ url_for('delete', id=card._id) }}"
+            class="button is-danger"
+            >질문 삭제</a
+          >
+  <a
+            href="{{ url_for('questionexpired', id=card._id) }}"
+            class="button is-primary is-dark is-pulled-right"
+            >해결 완료</a
+          >
 </div>
 
-{% if card.active == 'true' %}
+  {% if card.active == 'true' %}
+    <div class="card" id="{{ card._id }}">
+        <header class="card-header pt-1 pb-1">
+          <strong class="pl-2">
+            <p class="card-author-name">{{ card.author }}</p>
+          </strong>
+          <time class="pl-3" datetime="2016-1-1">{{ card.time_convert }}</time>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            {{ card.context }}
+            <br />
+          </div>
+        </div>
+    </div>
 <article class="media">
   <div class="media-content">
     <div class="field">
       <p class="control">
         <form action="{{ url_for('detail', id=id) }}" method="post">
             <input class="input is-primary" name="comment-context" placeholder="댓글 작성하기"></input>
-             <button class="button is-info" type="submit">등록</button>
+             <button class="button is-success mt-3" type="submit">등록</button>
         </form>
         
       </p>
     </div>    
   </div>
+  </article>
   {% else %}
+<div class="card has-background-grey-light" id="{{ card._id }}">
+        <header class="card-header pt-1 pb-1">
+          <strong class="pl-2">
+            <p class="card-author-name">{{ card.author }}</p>
+          </strong>
+          <time class="pl-3" datetime="2016-1-1">{{ card.time_convert }}</time>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            {{ card.context }}
+            <br />
+          </div>
+        </div>
+    </div>
   {% endif %}
-</article>
+
 {% for comment in comments %}
-{% if comment.canrevise =='ok' %}
-<article class="media">
+<article class="media has-background-primary-light">
   <div class="media-content">
     <div class="content">
-      <p>
-        <strong>{{ comment.author }}</strong> <small>{{comment.time_convert}}</small>
+      <p class="pl-3">
+        <strong>{{ comment.author }}</strong> <small>31m</small>
         <br />
         {{ comment.context }}
       </p>
     </div>
     <nav class="level is-mobile">
-      <div class="level-left">
-        <a class="level-item">
-          <span class="icon is-small"><i class="fas fa-reply"></i></span>
-        </a>
-        <a class="level-item">
-          <span class="icon is-small"><i class="fas fa-retweet"></i></span>
-        </a>
-        <a class="level-item">
-          <span class="icon is-small"><i class="fas fa-heart"></i></span>
-        </a>
-      </div>
+      
     </nav>
   </div>
-  <div class="media-right">
+  <div class="media-right pr-3">
     <a href="{{ url_for('edit_comment', card_id=id, id=comment._id) }}" class="button is-warning">수정</a>
     <a href="{{ url_for('delete_comment', card_id=id, id=comment._id) }}" class="button is-danger">삭제</a>
   </div>
 </article>
 
-{{else}}
-<article class="media">
-  <div class="media-content">
-    <div class="content">
-      <p>
-        <strong>{{ comment.author }}</strong> <small>11{{comment.time_convert}}</small>
-        <br />
-        {{ comment.context }}
-      </p>
-    </div>
-    <nav class="level is-mobile">
-      <div class="level-left">
-        <a class="level-item">
-          <span class="icon is-small"><i class="fas fa-reply"></i></span>
-        </a>
-        <a class="level-item">
-          <span class="icon is-small"><i class="fas fa-retweet"></i></span>
-        </a>
-        <a class="level-item">
-          <span class="icon is-small"><i class="fas fa-heart"></i></span>
-        </a>
-      </div>
-    </nav>
-  </div>
-  <div class="media-right">
-    <button class="delete"></button>
-  </div>
-</article>
-{% endif %} {% endfor %}  {% endblock %} {% block scripts %}
-<script></script>
+{% endfor %} 
+{% endblock %} {% block scripts %}
+<script>
 
+</script>
 {% endblock %}

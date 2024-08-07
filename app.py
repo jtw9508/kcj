@@ -75,14 +75,14 @@ def login_required(f):
             except jwt.InvalidTokenError:
                 payload = None     							
 
-            if payload is None: return Response(status=401)
+            if payload is None: return redirect(url_for('loginpage'))
             
             user_id   = payload['id']
             user_name = payload['username']  					
             g.user_id = user_id
             g.user_name = user_name
         else:
-            return Response(status = 401)  						
+            return redirect(url_for('loginpage'))  						
 
         return f(*args, **kwargs)
     return decorated_function
@@ -92,7 +92,6 @@ def is_logined(access_token):
         is_login = True
         try:
             payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
-            print(payload)
             user_name = payload['username']
         except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
             is_login = False
@@ -111,8 +110,6 @@ def index():
     access_token = request.cookies.get('mytoken')
     # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
     is_login, user_name, payload = is_logined(access_token)
-    print(user_name, is_login)
-
     cards = list(db.cards.find({"active":"true"}))    
     new_cards = []
     for card in cards:
@@ -127,7 +124,9 @@ def index():
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-    print(user_name)
+    if is_login == True:
+        user_id = payload['id']
+        return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name, user_id = user_id )
     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -163,7 +162,7 @@ def edit(id):
     if request.method == 'POST':
         context = request.form['modified-context']
         db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
-        return redirect(url_for('index'))
+        return redirect(url_for('detail', id=id))
     card = db.cards.find_one({'_id': ObjectId(id)})
     return render_template('edit-card.html', id=id, card=card, is_login=is_login, user_name=user_name)
 
@@ -181,7 +180,6 @@ def detail(id):
     ##로그인되어 있는지 확인
     access_token = request.cookies.get('mytoken')
     is_login, user_name, payload = is_logined(access_token)
-
     if request.method == 'POST':
         context = request.form['comment-context']
         token_receive = request.cookies.get('mytoken')
@@ -190,7 +188,9 @@ def detail(id):
         comment = {'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
         db.comments.insert_one(comment)
         return redirect(url_for('detail', id=id))
+    
     card = db.cards.find_one({'_id': ObjectId(id)})
+    card['time_convert'] = convert_time(card['time'])
     comments = list(db.comments.find({'card_id' : id}))
     new_comments = []
     for comment in comments:
@@ -203,9 +203,8 @@ def detail(id):
             comment['canrevise'] = 'no'
 
         comment['time_convert'] = convert_time(comment['time'])
-        new_comments.append(card)
+        new_comments.append(comment)
     comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
-
     return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name)
 
 # READ COMMENT
@@ -250,8 +249,6 @@ def signup():
     pw_receive = request.form['pw_give']
     nickname_receive = request.form['nickname_give']
     pw_hash = hashlib.sha256(pw_receive.encode('utf-8')).hexdigest()
-    print(pw_receive)
-    print(pw_hash)
 
     # 이미 존재하는 아이디면 패스!
     result = db.user.find_one({'ID': id_receive})
@@ -295,39 +292,32 @@ def logout():
     return render_template('index.html')
 
 ## MYPAGE API(내 포스트와 댓글들을 가져와서 화면에 보여주기)
-@app.route('/mypage<string:user_id>', methods = ['GET'])
+@app.route('/mypage/<string:user_id>', methods = ['GET'])
 @login_required
 def get_mypage(user_id):
     access_token = request.cookies.get('mytoken')
     is_login, user_name, payload = is_logined(access_token)
-    user_name = payload['username']
-    print(user_name)
+    id = payload['id']
+    if user_id != id:
+        return PermissionError
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
-    print(cards)
-    # for card in cards:
     new_cards = []
     for card in cards:
-        # try:
-        #     if card['author'] == payload['username']:
-        #         card['canrevise'] = 'ok'
-        #     else:
-        #         card['canrevise'] = 'no'
-        # except:
-        #     card['canrevise'] = 'no'
-
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-
     comments = list(db.comments.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
-    return render_template('mypage.html', cards = cards, comments = comments, is_login = is_login, user_name = user_name)
+    return render_template('mypage.html', cards=cards, comments=comments, is_login=is_login, user_name=user_name)
 
 
 # 질문 완료 페이지 불러오기
 @app.route('/records', methods = ['GET'])
 def record_page():
     cards = list(db.cards.find({"active":"false"}))
-    return render_template('past-card.html', card = cards)
+    for card in cards:
+        card['time_convert'] = convert_time(card['time'])
+    return render_template('past-card.html', cards = cards)
+
 # 질문 완료 텍스트 추가
 @app.route('/questionexpired/<string:id>')
 def questionexpired(id):
