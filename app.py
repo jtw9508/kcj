@@ -138,12 +138,18 @@ def signuppage():
 
 @app.context_processor
 def inject_base_variables():
-    access_token = request.cookies.get('mytoken')
-    is_login, user_name, payload = is_logined(access_token)
-    if is_login == True:
-        user_id = payload['id']
-        return dict(user_id = user_id )
+    user_id = None
+    if request.cookies.get('mytoken'):
+        access_token = request.cookies.get('mytoken')
+        try:
+            is_login, user_name, payload = is_logined(access_token)
+            if is_login:
+                user_id = payload.get('id')
+        except Exception as e:
+            # 로그에 오류 기록
+            app.logger.error(f"Error in context processor: {str(e)}")
     
+    return dict(user_id=user_id)
 
 # CREATE CARD
 @app.route('/add', methods=['GET', 'POST'])
