@@ -108,7 +108,6 @@ def is_logined(access_token):
 @app.route('/')
 def index():
     access_token = request.cookies.get('mytoken')
-    # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
     is_login, user_name, payload = is_logined(access_token)
     cards = list(db.cards.find({"active":"true"}))    
     new_cards = []
@@ -124,9 +123,9 @@ def index():
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-    if is_login == True:
-        user_id = payload['id']
-        return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name, user_id = user_id )
+    # if is_login == True:
+    #     user_id = payload['id']
+    #     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name, user_id = user_id )
     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -136,7 +135,15 @@ def loginpage():
 @app.route('/signuppage', methods = ['GET'])
 def signuppage():
     return render_template('signup.html')
-    return render_template('index.html', cards=cards)
+
+@app.context_processor
+def inject_base_variables():
+    access_token = request.cookies.get('mytoken')
+    is_login, user_name, payload = is_logined(access_token)
+    if is_login == True:
+        user_id = payload['id']
+        return dict(user_id = user_id )
+    
 
 # CREATE CARD
 @app.route('/add', methods=['GET', 'POST'])

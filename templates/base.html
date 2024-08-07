@@ -43,9 +43,9 @@
                 <div class="buttons">
                   
                   <div class="login-elements">
-                    <a href="/add" class="button is-dark">질문하기</a>
-                    <a href="{{ url_for('get_mypage', user_id = user_name) }}" class="nav-link">마이페이지</a>
-                    <button onclick = "logout()" class="nav-link">로그아웃</a>
+                    <a href="/add" class="button is-link">질문하기</a>
+                    <a href="{{ url_for('get_mypage', user_id = user_id) }}" class="button is-link is-light">마이페이지</a>
+                    <button onclick = "logout()" class="button is-danger is-light">로그아웃</a>
                   </div>
                   <div class="logout-elements">
                     <a href="/loginpage" class="button is-dark">로그인하기</a>
