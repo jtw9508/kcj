@@ -86,11 +86,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# MAIN & READ CARD
-@app.route('/')
-# @is_logined
-def index():
-    access_token = request.cookies.get('mytoken')
+def is_logined(access_token):
     if access_token:
         is_login = True
         try:
@@ -104,6 +100,26 @@ def index():
     else:
         is_login = False
         user_name = '로그인해주세요'
+    return is_login, user_name
+
+# MAIN & READ CARD
+@app.route('/')
+def index():
+    access_token = request.cookies.get('mytoken')
+    # if access_token:
+    #     is_login = True
+    #     try:
+    #         payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+    #         user_name = payload['username']
+    #     except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
+    #         is_login = False
+    #         user_name = '로그인해주세요'
+    #         # return render_template('index.html', is_login = is_login, user_name = user_name)
+        
+    # else:
+    #     is_login = False
+    #     user_name = '로그인해주세요'
+    is_login, user_name = is_logined(access_token)
     # ObjectID string 으로 변환
     def convert_objectid_to_str(doc):
         if isinstance(doc, dict):
@@ -117,7 +133,7 @@ def index():
                 convert_objectid_to_str(item)
         return doc
     cards = list(db.cards.find({}))
-
+    print(cards)
     new_cards = []
     for card in cards:
         try:
@@ -268,17 +284,28 @@ def login():
         return jsonify({'result': 'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
     pass
 
+
+#logout
 @app.route('/logout', methods = ['POST'])
 def logout():
     return render_template('index.html')
 
 ## MYPAGE API(내 포스트와 댓글들을 가져와서 화면에 보여주기)
-@app.route('/mypage', methods = ['POST'])
+@app.route('/mypage', methods = ['GET'])
 @login_required
 def get_mypage():
-    my_post = db.card.find_all({'author':user_name}) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
-    my_reply = db.comment.find_all({'author':user_name}) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
-    return render_template('my_page.html')
+    access_token = request.cookies.get('mytoken')
+    is_login, user_name = is_logined(access_token)
+    token_receive = request.cookies.get('mytoken')
+    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+    user_name = payload['username']
+    print(user_name)
+    cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
+    print(cards)
+    # for card in cards:
+
+    comments = list(db.comments.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
+    return render_template('mypage.html', cards = cards, comments = comments, is_login = is_login, user_name = user_name)
 
 
 if __name__ == '__main__':
