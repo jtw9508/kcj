@@ -108,7 +108,6 @@ def is_logined(access_token):
 @app.route('/')
 def index():
     access_token = request.cookies.get('mytoken')
-    # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
     is_login, user_name, payload = is_logined(access_token)
     cards = list(db.cards.find({"active":"true"}))    
     new_cards = []
@@ -124,9 +123,9 @@ def index():
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-    if is_login == True:
-        user_id = payload['id']
-        return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name, user_id = user_id )
+    # if is_login == True:
+    #     user_id = payload['id']
+    #     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name, user_id = user_id )
     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -136,7 +135,21 @@ def loginpage():
 @app.route('/signuppage', methods = ['GET'])
 def signuppage():
     return render_template('signup.html')
-    return render_template('index.html', cards=cards)
+
+@app.context_processor
+def inject_base_variables():
+    user_id = None
+    if request.cookies.get('mytoken'):
+        access_token = request.cookies.get('mytoken')
+        try:
+            is_login, user_name, payload = is_logined(access_token)
+            if is_login:
+                user_id = payload.get('id')
+        except Exception as e:
+            # 로그에 오류 기록
+            app.logger.error(f"Error in context processor: {str(e)}")
+    
+    return dict(user_id=user_id)
 
 # CREATE CARD
 @app.route('/add', methods=['GET', 'POST'])
@@ -147,7 +160,8 @@ def add():
         token_receive = request.cookies.get('mytoken')
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         username = payload['username']
-        card = {'author': username, 'context': context, 'time': datetime.datetime.utcnow(), 'active':'true'}
+        user_id = payload['id']
+        card = {'author_id': user_id, 'author': username, 'context': context, 'time': datetime.datetime.utcnow(), 'active':'true'}
         db.cards.insert_one(card)
         return redirect(url_for('index'))
     return render_template('create-card.html')
@@ -185,7 +199,8 @@ def detail(id):
         token_receive = request.cookies.get('mytoken')
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         username = payload['username']
-        comment = {'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
+        user_id = payload['id']
+        comment = {'author_id': user_id ,'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
         db.comments.insert_one(comment)
         return redirect(url_for('detail', id=id))
     
@@ -206,24 +221,9 @@ def detail(id):
         comment['time_convert'] = convert_time(comment['time'])
         new_comments.append(comment)
     comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
-    return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name)
+    author_id = card['author_id']
+    return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name, author_id=author_id)
 
-# READ COMMENT
-@app.route('/comment/<string:id>', methods=['GET'])
-def get_comment(id):
-    comments = list(db.comments.find({'card_id' : id}))
-    return jsonify(comments)
-
-# CREATE COMMENT
-@app.route('/comment/<string:id>', methods=['POST'])
-def add_comment(id):
-    context = request.form['comment-context']
-    token_receive = request.cookies.get('mytoken')
-    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-    username = payload['username']
-    comment = {'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
-    db.cards.insert_one(comment)
-    return jsonify({"status": "success"})
 
 # EDIT COMMENT
 @app.route('/comment/edit/<string:card_id>/<string:id>', methods=['GET', 'POST'])
