@@ -92,23 +92,28 @@ def is_logined(access_token):
         is_login = True
         try:
             payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+            print(payload)
             user_name = payload['username']
         except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
             is_login = False
             user_name = '로그인해주세요'
-            return is_login, user_name, False
+            return is_login, user_name, {'username':''}
         
     else:
         is_login = False
         user_name = '로그인해주세요'
+        payload = {'username':''}
     return is_login, user_name, payload
 
 # MAIN & READ CARD
 @app.route('/')
 def index():
     access_token = request.cookies.get('mytoken')
-    payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+    print(type(access_token))
+    # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+    
     is_login, user_name, payload = is_logined(access_token)
+    print(payload)
     print(user_name, is_login)
 
     cards = list(db.cards.find({}))
@@ -125,7 +130,7 @@ def index():
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-
+    print(user_name)
     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -249,7 +254,7 @@ def signup():
     if result is not None:
         return jsonify({'result': 'fail', 'msg': '이미 존재하는 ID입니다!'})
     else:
-        db.user.insert_one({'ID': id_receive, 'PW': pw_hash, 'NICK': nickname_receive})
+        db.user.insert_one({'ID': id_receive, 'PW': pw_hash, 'username': nickname_receive})
         return jsonify({'result': 'success'})
 
 ## LOGIN API
@@ -267,7 +272,7 @@ def login():
         # JWT 토큰 생성
         payload = {
             'id': id_receive,
-            'username': result['NICK'], #작성자 기록
+            'username': result['username'], #작성자 기록
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=10000)
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256') #.decode('utf-8')
@@ -292,6 +297,7 @@ def get_mypage(id):
     access_token = request.cookies.get('mytoken')
     is_login, user_name, payload = is_logined(access_token)
     user_name = payload['username']
+    print(payload)
     print(user_name)
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
     print(cards)

@@ -28,7 +28,7 @@
   </div>
 </article>
 {% for comment in comments %}
-{{if comment.canrevise =='ok'}}
+{% if comment.canrevise =='ok' %}
 <article class="media">
   <div class="media-content">
     <div class="content">
@@ -86,12 +86,7 @@
     <button class="delete"></button>
   </div>
 </article>
-{% endfor %} {% endif %} {% endblock %} {% block scripts %}
+{% endif %} {% endfor %}  {% endblock %} {% block scripts %}
 <script></script>
-=======
-{% endfor %} {% endblock %} {% block scripts %}
-<script>
 
-</script>
->>>>>>> upstream/main
 {% endblock %}
