@@ -1,54 +1,88 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>kcj</title>
-    </head>
-
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>kcj</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
     />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style></style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
-    <style></style>
+    <style>
+  html, body {
+    height: 100%;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+  #main-section {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-content {
+    flex-grow: 1;
+  }
+</style>
   </head>
   <body>
-    <header>
-      <nav class="navbar">
-  <div class="container">
-    <div id="navMenu" class="navbar-menu">
-      <div class="navbar-start">
-        <a class="navbar-item">
-          Home
-        </a>
-        <a class="navbar-item">
-          Documentation
-        </a>
+    <section id="main-section" class="hero is-info">
+      <div class="hero-head">
+        <header>
+          <nav class="navbar">
+            <div class="container">
+              <div id="navMenu" class="navbar-menu">
+                <div class="navbar-start">
+                  <a href="/" class="navbar-item">홈페이지</a>
+                </div>
+            <div class="navbar-end">
+              <div class="navbar-item">
+                <div class="buttons">
+                  
+                  {% if is_login %}
+                    <a href="/add" class="button is-dark">질문하기</a>
+                    <a href="/mypage" class="nav-link">마이페이지</a>
+                    <button onclick = "logout()" class="nav-link">로그아웃</a>
+                  {% else %}
+                    <a href="/loginpage" class="button is-dark">로그인하기</a>
+                    <a href="/signuppage" class="button is-link">회원가입하기</a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </nav>      
+        </header>
       </div>
-
-      <div class="navbar-end">
-        <div class="navbar-item">
-          <div class="buttons">
-            {% if is_login %}
-      <a href="/mypage" class="nav-link">마이페이지</a>
-      <button onclick = "logout()" class="nav-link">로그아웃</a>
-      {% else %}
-      <a href="/loginpage" class="button is-dark">로그인하기</a>
-      <a href="/signuppage" class="button is-link">회원가입하기</a>
-      {% endif %}
-          </div>
-        </div>
-      </div>
+    <div class="hero-body flex-wrap">
+      {% block content %} {% endblock %}
     </div>
-  </div>
-</nav>      
-    </header>
-{% block content %} {% endblock %}
+    <div class="hero-foot">
+        <nav class="level is-mobile">
+          <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">현재 질문</p>
+              <p id="accum_tests" class="title">0</p>
+            </div>
+          </div>
+          <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">완료된 질문</p>
+              <p id="record_tests" class="title">0</p>
+            </div>
+          </div>
+        
+        </nav>
+      </div>
+    </section>
+
 
 {% block scripts %} {% endblock %}
     

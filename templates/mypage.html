@@ -1,9 +1,5 @@
 {% extends 'base.html' %} {% block content %}
-
-<section class="hero is-success">
-    <h1>내 질문들</h1>
-    <div class="hero-body" id="signup-box">
-      <div class="fixed-grid has-5-cols">
+      <div class="fixed-grid has-4-cols">
         <div class="grid">
           {% for card in cards %}
           <div class="cell">
@@ -73,22 +69,8 @@
 
         </div>
       </div>
-    </div>
-  </section>
   {% endblock %} {% block scripts %}
   <script>
-    $(document).ready(function () {
-      $(".card").each(function () {
-        const cardId = $(this).attr("id");
-        const commentList = $(this).find("#comment-list");
-  
-        $.get("/comments/" + cardId, function (comments) {
-          comments.forEach((comment) => {
-            commentList.append("<p>" + comment + "</p>");
-          });
-        });
-      });
-    });
   
     function is_login() {
       if (document.cookie["mytoken"]) {

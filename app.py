@@ -108,8 +108,8 @@ def is_logined(access_token):
 def index():
     access_token = request.cookies.get('mytoken')
     payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+
     is_login, user_name = is_logined(access_token)
-    print(user_name, is_login)
 
     cards = list(db.cards.find({}))
     new_cards = []
@@ -276,22 +276,17 @@ def logout():
     return render_template('index.html')
 
 ## MYPAGE API(내 포스트와 댓글들을 가져와서 화면에 보여주기)
-@app.route('/mypage', methods = ['GET'])
+@app.route('/mypage/<string:user_id>', methods = ['GET'])
 @login_required
-def get_mypage():
+def mypage(user_id):
     access_token = request.cookies.get('mytoken')
     is_login, user_name = is_logined(access_token)
     token_receive = request.cookies.get('mytoken')
     payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
     user_name = payload['username']
-    print(user_name)
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
-    print(cards)
-    # for card in cards:
-
     comments = list(db.comments.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
     return render_template('mypage.html', cards = cards, comments = comments, is_login = is_login, user_name = user_name)
-
 
 if __name__ == '__main__':
    app.run('0.0.0.0',port=5000,debug=True)
