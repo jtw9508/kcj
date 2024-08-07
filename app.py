@@ -92,7 +92,6 @@ def is_logined(access_token):
         is_login = True
         try:
             payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
-            print(payload)
             user_name = payload['username']
         except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
             is_login = False
@@ -207,7 +206,6 @@ def detail(id):
         comment['time_convert'] = convert_time(comment['time'])
         new_comments.append(comment)
     comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
-    print(comments)
     return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name)
 
 # READ COMMENT
@@ -252,8 +250,6 @@ def signup():
     pw_receive = request.form['pw_give']
     nickname_receive = request.form['nickname_give']
     pw_hash = hashlib.sha256(pw_receive.encode('utf-8')).hexdigest()
-    print(pw_receive)
-    print(pw_hash)
 
     # 이미 존재하는 아이디면 패스!
     result = db.user.find_one({'ID': id_receive})
