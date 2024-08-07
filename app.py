@@ -205,6 +205,16 @@ def get_mypage():
     my_reply = db.comment.find_all({'author':user_name}) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
     return render_template('my_page.html')
 
+@app.route('/records', methods = ['GET'])
+def record_page():
+    cards = list(db.cards.find({"active":"false"}))
+    return render_template('past-card.html', card = cards)
+
+@app.route('/questionexpired', methods = ['POST'])
+def question_expired():
+    card_id_receive = request.form['cardid-give']
+    db.cards.update_one({"card_id":card_id_receive}, {"$set":{"active":"false"}})
+    return jsonify({'result': 'success'})
 
 if __name__ == '__main__':
    app.run('0.0.0.0',port=5000,debug=True)

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero is-success">
+  <a href="/" class="button is-black">진행중인 질문 보기</a>
+  <div class="hero-body" id="signup-box">
+    <div class="fixed-grid has-5-cols">
+      <div class="grid">
+        {% for card in card %}        
+        <div class="cell">
+          <div class="card" id="{{ card._id }}">
+            <header class="card-header">
+              <p class="card-author-name">{{ card.author }}</p>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                {{ card.context }}
+                <a href="#">@keyword</a>
+                <br />
+                <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <a
+                href="{{ url_for('detail', id=card._id) }}"
+                class="card-footer-item"
+                >답변 보기</a
+              >
+            </footer>
+          </div>
+        </div>
+        {% endfor %}
+        <!-- test card -->
+        <div class="cell">
+            <div class="card" id="testcard">
+              <header class="card-header">
+                <p class="card-author-name">완료테스트작성자</p>
+              </header>
+              <div class="card-content">
+                <div class="content">
+                  테스트내용
+                  <a href="#">@keyword</a>
+                  <br />
+                  <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
+                </div>
+              </div>
+              <footer class="card-footer">
+                <a
+                  href="{{ url_for('detail', id=card._id) }}"
+                  class="card-footer-item"
+                  >답변 보기</a
+                >
+              </footer>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
