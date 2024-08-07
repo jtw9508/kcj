@@ -106,6 +106,7 @@ def is_logined(access_token):
 @app.route('/')
 def index():
     access_token = request.cookies.get('mytoken')
+    payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
     # if access_token:
     #     is_login = True
     #     try:
@@ -120,6 +121,7 @@ def index():
     #     is_login = False
     #     user_name = '로그인해주세요'
     is_login, user_name = is_logined(access_token)
+    print(user_name, is_login)
     # ObjectID string 으로 변환
     def convert_objectid_to_str(doc):
         if isinstance(doc, dict):
@@ -133,7 +135,6 @@ def index():
                 convert_objectid_to_str(item)
         return doc
     cards = list(db.cards.find({}))
-    print(cards)
     new_cards = []
     for card in cards:
         try:
@@ -143,7 +144,7 @@ def index():
                 card['canrevise'] = 'no'
         except:
             card['canrevise'] = 'no'
-        print(card['time'])
+
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
