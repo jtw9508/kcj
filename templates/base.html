@@ -48,14 +48,14 @@
               <div class="navbar-item">
                 <div class="buttons">
                   
-                  {% if is_login %}
-                    <a href="/add" class="button is-dark">질문하기</a>
-                    <a href="{{ url_for('get_mypage', user_id = user_name) }}" class="nav-link">마이페이지</a>
-                    <button onclick = "logout()" class="nav-link">로그아웃</a>
-                  {% else %}
-                    <a href="/loginpage" class="button is-dark">로그인하기</a>
-                    <a href="/signuppage" class="button is-link">회원가입하기</a>
-                  {% endif %}
+
+                    <a href="/add" class="button is-dark login-elements">질문하기</a>
+                    <a href="{{ url_for('get_mypage', user_id = user_name) }}" class="nav-link login-elements">마이페이지</a>
+                    <button onclick = "logout()" class="nav-link login-elements">로그아웃</a>
+                  
+                    <a href="/loginpage" class="button is-dark logout-elements">로그인하기</a>
+                    <a href="/signuppage" class="button is-link logout-elements">회원가입하기</a>
+                 
                 </div>
               </div>
             </div>
@@ -87,17 +87,30 @@
 
 {% block scripts %} 
 <script>
-    function logout() {
-    $.removeCookie("mytoken", { path: "/" });
-    window.location.href = "/";
+document.addEventListener("DOMContentLoaded", function() {
+  const loginElements = document.querySelectorAll('.login-elements');
+  const logoutElements = document.querySelectorAll('.logout-elements');
+  console.log('Login Elements:', loginElements); 
+  console.log('Logout Elements:', logoutElements);
+  const loggedIn = is_login();
+  console.log('Is Logged In:', loggedIn);
+  if (is_login()) {
+    loginElements.forEach(element => element.style.display = 'block');
+    logoutElements.forEach(element => element.style.display = 'none');
+  } else {
+    loginElements.forEach(element => element.style.display = 'none');
+    logoutElements.forEach(element => element.style.display = 'block');
   }
-    function is_login() {
-      if (document.cookie["mytoken"]) {
-        return true;
-      } else {
-        return false;
-      }
-    }
+});
+
+function logout() {
+  $.removeCookie("mytoken", { path: "/" });
+  window.location.href = "/";
+}
+
+function is_login() {
+  return $.cookie("mytoken") !== undefined;
+}
 </script>{% endblock %}
     
   </body>
