@@ -11,6 +11,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
     <style>
   html, body {
     height: 100%;
@@ -41,14 +42,16 @@
               <div class="navbar-item">
                 <div class="buttons">
                   
-                  {% if is_login %}
+                  <div class="login-elements">
                     <a href="/add" class="button is-dark">질문하기</a>
-                    <a href="{{ url_for('get_mypage', user_id=user_id) }}" class="nav-link">마이페이지</a>
+                    <a href="{{ url_for('get_mypage', user_id = user_name) }}" class="nav-link">마이페이지</a>
                     <button onclick = "logout()" class="nav-link">로그아웃</a>
-                  {% else %}
+                  </div>
+                  <div class="logout-elements">
                     <a href="/loginpage" class="button is-dark">로그인하기</a>
                     <a href="/signuppage" class="button is-link">회원가입하기</a>
-                  {% endif %}
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -77,21 +80,30 @@
       </div>
     </section>
 
-
-{% block scripts %} 
-<script>
-    function logout() {
-    $.removeCookie("mytoken", { path: "/" });
-    window.location.href = "/";
-  }
-    function is_login() {
-      if (document.cookie["mytoken"]) {
-        return true;
-      } else {
-        return false;
+    <script>
+      $(document).ready( function() {
+        console.log(is_login())
+        if (is_login()) {
+          $('.login-elements').show();
+          $('.logout-elements').hide();
+        } else {
+          $('.login-elements').hide();
+          $('.logout-elements').show();
+        }
+      });
+      
+      function logout() {
+        $.removeCookie("mytoken", { path: "/" });
+        window.location.href = "/";
       }
-    }
-</script>{% endblock %}
+      
+      function is_login() {
+        return $.cookie("mytoken") !== undefined;
+      }
+      </script>
+{% block scripts %} 
+
+{% endblock %}
     
   </body>
 </html>
