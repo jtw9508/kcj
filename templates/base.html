@@ -43,7 +43,7 @@
                   
                   {% if is_login %}
                     <a href="/add" class="button is-dark">질문하기</a>
-                    <a href="/mypage" class="nav-link">마이페이지</a>
+                    <a href="{{ url_for('get_mypage', user_id = user_name) }}" class="nav-link">마이페이지</a>
                     <button onclick = "logout()" class="nav-link">로그아웃</a>
                   {% else %}
                     <a href="/loginpage" class="button is-dark">로그인하기</a>
@@ -78,7 +78,20 @@
     </section>
 
 
-{% block scripts %} {% endblock %}
+{% block scripts %} 
+<script>
+    function logout() {
+    $.removeCookie("mytoken", { path: "/" });
+    window.location.href = "/";
+  }
+    function is_login() {
+      if (document.cookie["mytoken"]) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+</script>{% endblock %}
     
   </body>
 </html>

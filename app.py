@@ -92,24 +92,26 @@ def is_logined(access_token):
         is_login = True
         try:
             payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+            print(payload)
             user_name = payload['username']
         except jwt.ExpiredSignatureError: ##기한이 만료된 경우 
             is_login = False
             user_name = '로그인해주세요'
-            # return render_template('index.html', is_login = is_login, user_name = user_name)
+            return is_login, user_name, {'username':''}
         
     else:
         is_login = False
         user_name = '로그인해주세요'
-    return is_login, user_name
+        payload = {'username':''}
+    return is_login, user_name, payload
 
 # MAIN & READ CARD
 @app.route('/')
 def index():
     access_token = request.cookies.get('mytoken')
-    payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
-
-    is_login, user_name = is_logined(access_token)
+    # payload = jwt.decode(access_token, SECRET_KEY, 'HS256')
+    is_login, user_name, payload = is_logined(access_token)
+    print(user_name, is_login)
 
     cards = list(db.cards.find({"active":"true"}))    
     new_cards = []
@@ -125,7 +127,7 @@ def index():
         card['time_convert'] = convert_time(card['time'])
         new_cards.append(card)
     cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
-
+    print(user_name)
     return render_template('index.html', cards = cards, is_login = is_login, user_name = user_name)
 
 @app.route('/loginpage', methods = ['GET'])
@@ -155,12 +157,15 @@ def add():
 @app.route('/edit/<string:id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
+    ##로그인되어 있는지 확인
+    access_token = request.cookies.get('mytoken')
+    is_login, user_name, payload = is_logined(access_token)
     if request.method == 'POST':
         context = request.form['modified-context']
         db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
         return redirect(url_for('detail', id=id))
     card = db.cards.find_one({'_id': ObjectId(id)})
-    return render_template('edit-card.html', id=id, card=card)
+    return render_template('edit-card.html', id=id, card=card, is_login=is_login, user_name=user_name)
 
 # DELETE CARD WITH COMMENT
 @app.route('/delete/<string:id>')
@@ -173,6 +178,10 @@ def delete(id):
 @app.route('/detail/<string:id>', methods=['GET', 'POST'])
 @login_required
 def detail(id):
+    ##로그인되어 있는지 확인
+    access_token = request.cookies.get('mytoken')
+    is_login, user_name, payload = is_logined(access_token)
+
     if request.method == 'POST':
         context = request.form['comment-context']
         token_receive = request.cookies.get('mytoken')
@@ -184,7 +193,21 @@ def detail(id):
     card = db.cards.find_one({'_id': ObjectId(id)})
     card['time_convert'] = convert_time(card['time'])
     comments = list(db.comments.find({'card_id' : id}))
-    return render_template('detail.html', id=id, card=card, comments=comments)
+    new_comments = []
+    for comment in comments:
+        try:
+            if comment['author'] == payload['username']:
+                comment['canrevise'] = 'ok'
+            else:
+                comment['canrevise'] = 'no'
+        except:
+            comment['canrevise'] = 'no'
+
+        comment['time_convert'] = convert_time(comment['time'])
+        new_comments.append(card)
+    comments = sorted(new_comments, key = lambda new_comments: new_comments['time'], reverse=True)
+
+    return render_template('detail.html', id=id, card=card, comments=comments, is_login=is_login,user_name=user_name)
 
 # READ COMMENT
 @app.route('/comment/<string:id>', methods=['GET'])
@@ -236,7 +259,7 @@ def signup():
     if result is not None:
         return jsonify({'result': 'fail', 'msg': '이미 존재하는 ID입니다!'})
     else:
-        db.user.insert_one({'ID': id_receive, 'PW': pw_hash, 'NICK': nickname_receive})
+        db.user.insert_one({'ID': id_receive, 'PW': pw_hash, 'username': nickname_receive})
         return jsonify({'result': 'success'})
 
 ## LOGIN API
@@ -247,18 +270,14 @@ def login():
 
     # 회원가입 때와 같은 방법으로 pw를 암호화합니다.
     pw_hash = hashlib.sha256(pw_receive.encode('utf-8')).hexdigest()
-    print(pw_receive)
-    print()
-    print(pw_hash)
     # id, 암호화된pw을 가지고 해당 유저를 찾습니다.
     result = db.user.find_one({'ID': id_receive, 'PW': pw_hash})
-
     # 찾으면 JWT 토큰을 만들어 발급합니다.
     if result is not None:
         # JWT 토큰 생성
         payload = {
             'id': id_receive,
-            'username': result['NICK'], #작성자 기록
+            'username': result['username'], #작성자 기록
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=10000)
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256') #.decode('utf-8')
@@ -277,17 +296,31 @@ def logout():
     return render_template('index.html')
 
 ## MYPAGE API(내 포스트와 댓글들을 가져와서 화면에 보여주기)
-@app.route('/mypage/<string:user_id>', methods = ['GET'])
+@app.route('/mypage<string:user_id>', methods = ['GET'])
 @login_required
-def mypage(user_id):
+def get_mypage(user_id):
     access_token = request.cookies.get('mytoken')
-    is_login, user_name = is_logined(access_token)
-    token_receive = request.cookies.get('mytoken')
-    payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+    is_login, user_name, payload = is_logined(access_token)
     id = payload['id']
     if user_id != id:
         return PermissionError
     cards = list(db.cards.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 질문을 모두 가져온다.
+    print(cards)
+    # for card in cards:
+    new_cards = []
+    for card in cards:
+        # try:
+        #     if card['author'] == payload['username']:
+        #         card['canrevise'] = 'ok'
+        #     else:
+        #         card['canrevise'] = 'no'
+        # except:
+        #     card['canrevise'] = 'no'
+
+        card['time_convert'] = convert_time(card['time'])
+        new_cards.append(card)
+    cards = sorted(new_cards, key = lambda new_cards: new_cards['time'], reverse=True)
+
     comments = list(db.comments.find({'author':user_name})) ##user_id(또는 user_name)을 이용해서 user가 남긴 댓글을 모두 가져온다.
     return render_template('mypage.html', cards=cards, comments=comments, is_login=is_login, user_name=user_name)
 
