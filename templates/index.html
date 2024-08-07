@@ -42,7 +42,7 @@
         </div>
         <div id="comment-list"></div>
         <footer class="card-footer">
-          <a
+          <a 
             href="{{ url_for('detail', id=card._id) }}"
             class="card-footer-item"
             >자세히 보기</a
@@ -65,13 +65,7 @@
 </style>
 {% endblock %} {% block scripts %}
 <script>
-  function is_login() {
-    if (document.cookie["mytoken"]) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+ 
   function signup() {
     var pw_give = $("#input-pw").val();
     if (pw_give.length <= 4) {
@@ -117,9 +111,6 @@
       },
     });
   }
-  function logout() {
-    $.removeCookie("mytoken", { path: "/" });
-    window.location.href = "/";
-  }
+
 </script>
 {% endblock %}

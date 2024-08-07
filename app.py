@@ -75,14 +75,14 @@ def login_required(f):
             except jwt.InvalidTokenError:
                 payload = None     							
 
-            if payload is None: return Response(status=401)
+            if payload is None: return redirect(url_for('loginpage'))
             
             user_id   = payload['id']
             user_name = payload['username']  					
             g.user_id = user_id
             g.user_name = user_name
         else:
-            return Response(status = 401)  						
+            return redirect(url_for('loginpage'))  						
 
         return f(*args, **kwargs)
     return decorated_function
@@ -180,7 +180,6 @@ def detail(id):
     ##로그인되어 있는지 확인
     access_token = request.cookies.get('mytoken')
     is_login, user_name, payload = is_logined(access_token)
-
     if request.method == 'POST':
         context = request.form['comment-context']
         token_receive = request.cookies.get('mytoken')
