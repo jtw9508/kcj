@@ -7,6 +7,7 @@ import jwt
 from functools  import wraps
 import math
 import time
+
 app = Flask(__name__)
 
 # LOAD .env FILE
