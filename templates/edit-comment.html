@@ -17,5 +17,27 @@
   <button class="button is-link mt-3" type="submit">수정</button>
 </form>
 {% endblock %} {% block scripts %}
-<script></script>
+<script>
+  $(document).ready(function () {
+    $("form").on("submit", function (e) {
+      e.preventDefault();
+      $.ajax({
+        type: "POST",
+        url: "/comment/edit/{{ card_id }}/{{ id }}",
+        data: $(this).serialize(),
+        success: function (response) {
+          if (response.result === "success") {
+            alert(response.msg);
+            window.location.href = "/detail/{{ card_id }}"; // 이전 페이지로 이동
+          } else {
+            alert(response.msg);
+          }
+        },
+        error: function (error) {
+          alert("오류가 발생했습니다.");
+        },
+      });
+    });
+  });
+</script>
 {% endblock %}

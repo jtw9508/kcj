@@ -7,6 +7,7 @@ import jwt
 from functools  import wraps
 import math
 import time
+import re
 
 app = Flask(__name__)
 
@@ -157,13 +158,15 @@ def inject_base_variables():
 def add():
     if request.method == 'POST':
         context = request.form['card-context']
+        if len(context) < 1:
+            return jsonify({'result': 'fail', 'msg': '최소한 1자 이상 입력해주세요.'})
         token_receive = request.cookies.get('mytoken')
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         username = payload['username']
         user_id = payload['id']
         card = {'author_id': user_id, 'author': username, 'context': context, 'time': datetime.datetime.utcnow(), 'active':'true'}
         db.cards.insert_one(card)
-        return redirect(url_for('index'))
+        return jsonify({'result': 'success', 'msg': '질문이 성공적으로 추가되었습니다.'})
     return render_template('create-card.html')
 
 # EDIT CARD
@@ -175,8 +178,10 @@ def edit(id):
     is_login, user_name, payload = is_logined(access_token)
     if request.method == 'POST':
         context = request.form['modified-context']
+        if len(context) < 1:
+            return jsonify({'result': 'fail', 'msg': '최소한 1자 이상 입력해주세요.'})
         db.cards.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
-        return redirect(url_for('detail', id=id))
+        return jsonify({'result': 'success', 'msg': '질문이 성공적으로 수정되었습니다.'})
     card = db.cards.find_one({'_id': ObjectId(id)})
     return render_template('edit-card.html', id=id, card=card, is_login=is_login, user_name=user_name)
 
@@ -196,14 +201,16 @@ def detail(id):
     is_login, user_name, payload = is_logined(access_token)
     if request.method == 'POST':
         context = request.form['comment-context']
+        if len(context) < 1:
+            return jsonify({'result': 'fail', 'msg': '최소한 1자 이상 입력해주세요.'})
         token_receive = request.cookies.get('mytoken')
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         username = payload['username']
         user_id = payload['id']
         comment = {'author_id': user_id ,'author': username, 'card_id': id, 'context': context, 'time': datetime.datetime.utcnow()}
         db.comments.insert_one(comment)
-        return redirect(url_for('detail', id=id))
-    
+        return jsonify({'result': 'success', 'msg': '댓글이 성공적으로 작성되었습니다.'})
+
     card = db.cards.find_one({'_id': ObjectId(id)})
     card['time_convert'] = convert_time(card['time'])
     print(card)
@@ -231,8 +238,10 @@ def detail(id):
 def edit_comment(card_id, id):
     if request.method == 'POST':
         context = request.form['modified-comment']
+        if len(context) < 1:
+            return jsonify({'result': 'fail', 'msg': '최소한 1자 이상 입력해주세요.'})
         db.comments.update_one({'_id': ObjectId(id)}, {'$set': {'context': context}})
-        return redirect(url_for('detail', id=card_id))
+        return jsonify({'result': 'success', 'msg': '댓글 수정되었습니다.'})
     comment = db.comments.find_one({'_id': ObjectId(id)})
     return render_template('edit-comment.html', card_id=card_id, id=id, comment=comment)
 
@@ -251,6 +260,17 @@ def signup():
     nickname_receive = request.form['nickname_give']
     pw_hash = hashlib.sha256(pw_receive.encode('utf-8')).hexdigest()
 
+    # ID 검증: 영어로만 5자 이상
+    if not re.match(r'^[a-zA-Z0-9]{5,}$', id_receive):
+        return jsonify({'result': 'fail', 'msg': 'ID는 영어+숫자 5자 이상이어야 합니다.'})
+
+    # 비밀번호 검증: 8자 이상
+    if len(pw_receive) < 8:
+        return jsonify({'result': 'fail', 'msg': '비밀번호는 8자 이상이어야 합니다.'})
+    
+    if len(nickname_receive) < 1:
+            return jsonify({'result': 'fail', 'msg': '닉네임을 최소한 1자 이상 입력해주세요.'})
+
     # 이미 존재하는 아이디면 패스!
     result = db.user.find_one({'ID': id_receive})
     if result is not None:
@@ -264,6 +284,14 @@ def signup():
 def login():
     id_receive = request.form['id_give']
     pw_receive = request.form['pw_give']
+
+    # ID 검증: 영어로만 5자 이상
+    if not re.match(r'^[a-zA-Z0-9]{5,}$', id_receive):
+        return jsonify({'result': 'fail', 'msg': 'ID는 영문+숫자 5자 이상이어야 합니다.'})
+
+    # 비밀번호 검증: 8자 이상
+    if len(pw_receive) < 8:
+        return jsonify({'result': 'fail', 'msg': '비밀번호는 8자 이상이어야 합니다.'})
 
     # 회원가입 때와 같은 방법으로 pw를 암호화합니다.
     pw_hash = hashlib.sha256(pw_receive.encode('utf-8')).hexdigest()
