@@ -11,5 +11,27 @@
   <button class="button is-link mt-3" type="submit">추가</button>
 </form>
 {% endblock %} {% block scripts %}
-<script></script>
+<script>
+  $(document).ready(function () {
+    $("form").on("submit", function (e) {
+      e.preventDefault();
+      $.ajax({
+        type: "POST",
+        url: "/add",
+        data: $(this).serialize(),
+        success: function (response) {
+          if (response.result === "success") {
+            alert(response.msg);
+            window.location.href = "/"; // index 페이지로 리다이렉트
+          } else {
+            alert(response.msg);
+          }
+        },
+        error: function (error) {
+          alert("오류가 발생했습니다.");
+        },
+      });
+    });
+  });
+</script>
 {% endblock %}
